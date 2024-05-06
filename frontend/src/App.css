@@ -1,0 +1,6 @@
+.main-container{
+    overflow: auto;
+    height: 100vh;
+    background-color: #ede6f6;
+    padding-bottom: 20px;
+}
