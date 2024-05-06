@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Container, Row, Col } from "react-bootstrap";
 import { ImParagraphCenter } from "react-icons/im";
 import { IoIosArrowDropdown } from "react-icons/io";
@@ -22,6 +22,21 @@ const FormComponent = () => {
   const [editingFieldId, setEditingFieldId] = useState(null);
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 600);
+    };
+
+    // Add event listener to window resize
+    window.addEventListener("resize", handleResize);
+
+    // Remove event listener on component unmount
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   const handleAddField = () => {
     if (
@@ -129,30 +144,30 @@ const FormComponent = () => {
     try {
       // Create an object to hold form information including title, description, and fields
       const formData = {
-        title: formTitle, // Assuming formTitle is a state variable holding the form title
-        description: formDescription, // Assuming formDescription is a state variable holding the form description
+        title: formTitle,
+        description: formDescription,
         fields: fields.map((field) => ({
           id: field.id,
           type: field.type,
           label: field.label,
           options: field.options,
-          required: field.required || false, // Set required to false if not set
+          required: field.required || false,
         })),
       };
-
+  
       // Send the formData to the server
-      const response = await fetch("http://localhost:3001/formData", {
+      const response = await fetch("http://localhost:3001/saveFormData", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to save form data");
       }
-
+  
       // Reset the form data
       setFields([]);
       setFieldType("");
@@ -162,14 +177,15 @@ const FormComponent = () => {
       setShowInput(false);
       setOptionError(false);
       setEditingFieldId(null);
-      setFormTitle(""); // Reset form title
-      setFormDescription(""); // Reset form description
-
+      setFormTitle("");
+      setFormDescription("");
+  
       console.log("Form data saved successfully");
     } catch (error) {
       console.error("Error:", error.message);
     }
   };
+  
 
   const renderField = (field) => {
     return (
@@ -244,7 +260,7 @@ const FormComponent = () => {
             size="sm"
             onClick={() => handleDeleteField(field.id)}
           >
-            <MdDeleteOutline size={30} />
+            <MdDeleteOutline size={isMobile?20:30} />
           </Button>
           <Button
             title="Edit"
@@ -252,7 +268,7 @@ const FormComponent = () => {
             size="sm"
             onClick={() => handleEditOptions(field.id)}
           >
-            <FaRegEdit size={25} />
+            <FaRegEdit size={isMobile?15:25} />
           </Button>
           <Button
             title="Copy"
@@ -260,7 +276,7 @@ const FormComponent = () => {
             size="sm"
             onClick={() => handleDuplicateField(field.id)}
           >
-            <FaRegCopy size={25} />
+            <FaRegCopy size={isMobile?15:25} />
           </Button>
           <div className="form-check form-switch">
             <label
@@ -324,7 +340,7 @@ const FormComponent = () => {
                     }
                     onClick={() => setFieldType("paragraph")}
                   >
-                    <ImParagraphCenter size={20} />
+                    <ImParagraphCenter size={isMobile ? 15 : 25} />
                     <div> Paragraph Text</div>
                   </Button>
                   <Button
@@ -336,44 +352,48 @@ const FormComponent = () => {
                     }
                     onClick={() => setFieldType("multipleChoice")}
                   >
-                    <RiCheckboxMultipleBlankLine size={30} />
+                    <RiCheckboxMultipleBlankLine size={isMobile ? 15 : 30} />
                     <div> Multiple Choice</div>
                   </Button>
                   <Button
+                  className="field-btn"
                     variant={
                       fieldType === "dropdown" ? "primary" : "outline-secondary"
                     }
                     onClick={() => setFieldType("dropdown")}
                   >
                     {" "}
-                    <IoIosArrowDropdown size={30} /> <div>Dropdown</div>
+                    <IoIosArrowDropdown size={isMobile ? 15 : 30}/> <div>Dropdown</div>
                   </Button>
                   <Button
+                  className="field-btn"
                     variant={
                       fieldType === "checkbox" ? "primary" : "outline-secondary"
                     }
                     onClick={() => setFieldType("checkbox")}
                   >
-                    <IoIosCheckboxOutline size={30} />
+                    <IoIosCheckboxOutline size={isMobile ? 15 : 30} />
                     <div>Checkbox</div>
                   </Button>
                   <Button
+                  className="field-btn"
                     variant={
                       fieldType === "date" ? "primary" : "outline-secondary"
                     }
                     onClick={() => setFieldType("date")}
                   >
-                    <BsCalendarDate size={25} />
+                    <BsCalendarDate size={isMobile ? 15 : 30} />
                     <div>Date</div>
                   </Button>
                   {/* <Button variant={fieldType === "time" ? "primary" : "outline-secondary"} onClick={() => setFieldType("time")}>Time</Button> */}
                   <Button
+                  className="field-btn"
                     variant={
                       fieldType === "image" ? "primary" : "outline-secondary"
                     }
                     onClick={() => setFieldType("image")}
                   >
-                    <BsImage size={25} />
+                    <BsImage size={isMobile ? 15 : 30} />
                     <div>Image</div>
                   </Button>
                 </div>
@@ -403,7 +423,7 @@ const FormComponent = () => {
                       />
                       <Button
                         className="btn-close btn-remove-opt"
-                        size="lg"
+                        size={isMobile ? "sm" : "lg"}
                         onClick={() => handleRemoveOption(index)}
                       ></Button>
                     </div>

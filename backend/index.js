@@ -1,61 +1,68 @@
-const express = require('express');
-const bodyParser = require('body-parser');
-const mysql = require('mysql');
-const app = express();
-const port = 3000;
+// Import necessary modules
+const express = require("express");
+const bodyParser = require("body-parser");
+const mysql = require("mysql2/promise");
 
+// Create an Express application
+const app = express();
 app.use(bodyParser.json());
 
-app.get('/forms', (req, res) => {
-  const sql = 'SELECT * FROM form_templates';
-  db.query(sql, (err, result) => {
-    if (err) throw err;
-    res.json(result);
-  });
+// Create a MySQL connection pool
+const pool = mysql.createPool({
+  host: "localhost",
+  user: "your_mysql_username",
+  password: "your_mysql_password",
+  database: "your_mysql_database_name",
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
 
-app.get('/forms/:id', (req, res) => {
-  const sql = 'SELECT * FROM form_templates WHERE id = ?';
-  db.query(sql, [req.params.id], (err, result) => {
-    if (err) throw err;
-    if (result.length === 0) {
-      res.status(404).json({ message: 'Form template not found' });
-    } else {
-      res.json(result[0]);
+// Define a route to handle saving form data
+app.post("/saveFormData", async (req, res) => {
+  try {
+    const formData = req.body;
+
+    // Start a new transaction
+    const connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    // Insert form data into the Form table
+    const [formResult] = await connection.query(
+      "INSERT INTO Form (title, description) VALUES (?, ?)",
+      [formData.title, formData.description]
+    );
+    const formId = formResult.insertId;
+
+    // Insert field data into the Field table
+    await Promise.all(
+      formData.fields.map(async (fieldData) => {
+        await connection.query(
+          "INSERT INTO Field (form_id, type, label, options, required) VALUES (?, ?, ?, ?, ?)",
+          [formId, fieldData.type, fieldData.label, JSON.stringify(fieldData.options), fieldData.required || false]
+        );
+      })
+    );
+
+    // Commit the transaction
+    await connection.commit();
+    connection.release();
+
+    res.status(200).json({ message: "Form data saved successfully" });
+  } catch (error) {
+    console.error("Error saving form data:", error);
+    res.status(500).json({ error: "Failed to save form data" });
+
+    // Rollback the transaction in case of error
+    if (connection) {
+      await connection.rollback();
+      connection.release();
     }
-  });
-});
-
-// Create a new form template
-app.post('/forms', (req, res) => {
-  const { title, description, user_id } = req.body;
-  const sql = 'INSERT INTO form_templates (title, description, user_id) VALUES (?, ?, ?)';
-  db.query(sql, [title, description, user_id], (err, result) => {
-    if (err) throw err;
-    res.json({ message: 'Form template created', id: result.insertId });
-  });
-});
-
-// Update a form template
-app.put('/forms/:id', (req, res) => {
-  const { title, description } = req.body;
-  const sql = 'UPDATE form_templates SET title = ?, description = ? WHERE id = ?';
-  db.query(sql, [title, description, req.params.id], (err, result) => {
-    if (err) throw err;
-    res.json({ message: 'Form template updated', id: req.params.id });
-  });
-});
-
-// Delete a form template
-app.delete('/forms/:id', (req, res) => {
-  const sql = 'DELETE FROM form_templates WHERE id = ?';
-  db.query(sql, [req.params.id], (err, result) => {
-    if (err) throw err;
-    res.json({ message: 'Form template deleted', id: req.params.id });
-  });
+  }
 });
 
 // Start the server
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
