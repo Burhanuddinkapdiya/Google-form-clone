@@ -6,8 +6,9 @@ import { IoIosCheckboxOutline } from "react-icons/io";
 import { BsCalendarDate } from "react-icons/bs";
 import { RiCheckboxMultipleBlankLine } from "react-icons/ri";
 import { BsImage } from "react-icons/bs";
-import { MdDeleteOutline } from "react-icons/md"; 
+import { MdDeleteOutline } from "react-icons/md";
 import { FaRegCopy } from "react-icons/fa";
+import { FaRegEdit } from "react-icons/fa";
 import "./FormComponent.css"; // Import the CSS file
 
 const FormComponent = () => {
@@ -18,13 +19,43 @@ const FormComponent = () => {
   const [fieldCounter, setFieldCounter] = useState(0);
   const [showInput, setShowInput] = useState(false);
   const [optionError, setOptionError] = useState(false);
+  const [editingFieldId, setEditingFieldId] = useState(null);
+  const [formTitle, setFormTitle] = useState("");
+  const [formDescription, setFormDescription] = useState("");
 
   const handleAddField = () => {
-    if(fieldType === 'paragraph'){
-      setFields([
-        ...fields,
+    if (
+      fieldType === "paragraph" ||
+      fieldType === "date" ||
+      fieldType === "image"
+    ) {
+      setFields((prevFields) => [
+        ...prevFields.filter((field) => field.id !== editingFieldId),
         {
-          id: fieldCounter,
+          id: editingFieldId !== null ? editingFieldId : fieldCounter,
+          type: fieldType,
+          label: fieldLabel,
+          options: [...fieldOptions.filter((option) => option.trim() !== "")],
+        },
+      ]);
+      setFieldCounter(fieldCounter + 1);
+      setFieldType("");
+      setFieldLabel("");
+      setFieldOptions([]);
+      setShowInput(!showInput);
+      setOptionError(false);
+      setEditingFieldId(null);
+    } else if (
+      fieldOptions.length === 0 ||
+      fieldOptions.some((option) => option.trim() === "")
+    ) {
+      setOptionError(true);
+      return; // Exit the function early if options are not present or contains empty options
+    } else {
+      setFields((prevFields) => [
+        ...prevFields.filter((field) => field.id !== editingFieldId),
+        {
+          id: editingFieldId !== null ? editingFieldId : fieldCounter,
           type: fieldType,
           label: fieldLabel,
           options: [...fieldOptions],
@@ -36,32 +67,18 @@ const FormComponent = () => {
       setFieldOptions([]);
       setShowInput(!showInput);
       setOptionError(false);
+      setEditingFieldId(null);
     }
-    if (fieldOptions.length === 0) {
-      setOptionError(true);
-      return; // Exit the function early if options are not present
-    }
-    setFields([
-      ...fields,
-      {
-        id: fieldCounter,
-        type: fieldType,
-        label: fieldLabel,
-        options: [...fieldOptions],
-      },
-    ]);
-    setFieldCounter(fieldCounter + 1);
-    setFieldType("");
-    setFieldLabel("");
-    setFieldOptions([]);
-    setShowInput(!showInput);
-    setOptionError(false);
   };
 
   const handleAddOption = () => {
     setFieldOptions([...fieldOptions, ""]);
   };
-
+  const handleRemoveOption = (index) => {
+    const updatedOptions = [...fieldOptions];
+    updatedOptions.splice(index, 1);
+    setFieldOptions(updatedOptions);
+  };
   const handleOptionChange = (index, value) => {
     const newOptions = [...fieldOptions];
     newOptions[index] = value;
@@ -99,6 +116,60 @@ const FormComponent = () => {
     });
     setFields(updatedFields);
   };
+  const handleEditOptions = (fieldId) => {
+    setEditingFieldId(fieldId);
+    const field = fields.find((field) => field.id === fieldId);
+    setFieldLabel(field.label);
+    setFieldType(field.type);
+    setFieldOptions([...field.options]);
+    setShowInput(true);
+  };
+
+  const sendDataToServer = async () => {
+    try {
+      // Create an object to hold form information including title, description, and fields
+      const formData = {
+        title: formTitle, // Assuming formTitle is a state variable holding the form title
+        description: formDescription, // Assuming formDescription is a state variable holding the form description
+        fields: fields.map((field) => ({
+          id: field.id,
+          type: field.type,
+          label: field.label,
+          options: field.options,
+          required: field.required || false, // Set required to false if not set
+        })),
+      };
+
+      // Send the formData to the server
+      const response = await fetch("http://localhost:3001/formData", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save form data");
+      }
+
+      // Reset the form data
+      setFields([]);
+      setFieldType("");
+      setFieldLabel("");
+      setFieldOptions([]);
+      setFieldCounter(0);
+      setShowInput(false);
+      setOptionError(false);
+      setEditingFieldId(null);
+      setFormTitle(""); // Reset form title
+      setFormDescription(""); // Reset form description
+
+      console.log("Form data saved successfully");
+    } catch (error) {
+      console.error("Error:", error.message);
+    }
+  };
 
   const renderField = (field) => {
     return (
@@ -107,23 +178,25 @@ const FormComponent = () => {
         {field.type === "paragraph" && (
           <input className="custom-input" type="text" placeholder="Paragraph" />
         )}
-        {field.type === "multipleChoice" &&
-          field.options.map((option, optionIndex) => (
-            <div className="options" key={optionIndex}>
-              <input
-                className="custom-input"
-                type="radio"
-                name={`option_${field.id}`}
-                value={option}
-              />{" "}
-              {option}
-              <Button
-                className="btn-close"
-                size="sm"
-                onClick={() => handleDeleteOption(field.id, optionIndex)}
-              ></Button>
-            </div>
-          ))}
+        {field.type === "multipleChoice" && (
+          <div>
+            {field.options.map((option, optionIndex) => (
+              <div className="options" key={optionIndex}>
+                <input
+                  type="radio"
+                  name={`option_${field.id}`}
+                  value={option}
+                />
+                {option}
+                <Button
+                  className="btn-close"
+                  size="sm"
+                  onClick={() => handleDeleteOption(field.id, optionIndex)}
+                ></Button>
+              </div>
+            ))}
+          </div>
+        )}
         {field.type === "dropdown" && (
           <select className="custom-select">
             {field.options.map((option, optionIndex) => (
@@ -131,24 +204,27 @@ const FormComponent = () => {
             ))}
           </select>
         )}
-        {field.type === "checkbox" &&
-          field.options.map((option, optionIndex) => (
-            <div className="options" key={optionIndex}>
-              <input
-                className="custom-checkbox"
-                type="checkbox"
-                id={`option_${optionIndex}`}
-                name={`option_${field.id}`}
-                value={option}
-              />
-              <label htmlFor={`option_${optionIndex}`}>{option}</label>
-              <Button
-                className="btn-close"
-                size="sm"
-                onClick={() => handleDeleteOption(field.id, optionIndex)}
-              ></Button>
-            </div>
-          ))}
+        {field.type === "checkbox" && (
+          <div>
+            {field.options.map((option, optionIndex) => (
+              <div className="options" key={optionIndex}>
+                <input
+                  className="custom-checkbox"
+                  type="checkbox"
+                  id={`option_${optionIndex}`}
+                  name={`option_${field.id}`}
+                  value={option}
+                />
+                <label htmlFor={`option_${optionIndex}`}>{option}</label>
+                <Button
+                  className="btn-close"
+                  size="sm"
+                  onClick={() => handleDeleteOption(field.id, optionIndex)}
+                ></Button>
+              </div>
+            ))}
+          </div>
+        )}
         {field.type === "date" && (
           <input className="custom-input" type="date" />
         )}
@@ -163,17 +239,31 @@ const FormComponent = () => {
         )}
         <div className="footer">
           <Button
+            title="Delete"
+            className="btn-delete"
             size="sm"
             onClick={() => handleDeleteField(field.id)}
-          ><MdDeleteOutline size={25} /></Button>
+          >
+            <MdDeleteOutline size={30} />
+          </Button>
           <Button
+            title="Edit"
+            className="btn-edit"
+            size="sm"
+            onClick={() => handleEditOptions(field.id)}
+          >
+            <FaRegEdit size={25} />
+          </Button>
+          <Button
+            title="Copy"
             className="btn-copy"
             size="sm"
             onClick={() => handleDuplicateField(field.id)}
-          ><FaRegCopy size={25} />
+          >
+            <FaRegCopy size={25} />
           </Button>
           <div className="form-check form-switch">
-          <label
+            <label
               className="form-check-label"
               htmlFor={`required_${field.id}`}
             >
@@ -186,7 +276,6 @@ const FormComponent = () => {
               checked={field.required}
               onChange={() => handleToggleRequired(field.id)}
             />
-            
           </div>
         </div>
       </div>
@@ -199,14 +288,18 @@ const FormComponent = () => {
         <Col>
           <div className="box-top">
             <input
+              value={formTitle}
               className="custom-input custom-input-top"
               type="text"
               placeholder="Enter Title"
+              onChange={(e) => setFormTitle(e.target.value)}
             />
             <input
+              value={formDescription}
               className="custom-input"
               type="text"
               placeholder="Enter Description"
+              onChange={(e) => setFormDescription(e.target.value)}
             />
           </div>
 
@@ -223,6 +316,7 @@ const FormComponent = () => {
                 />
                 <div className="grid-btn">
                   <Button
+                    className="field-btn"
                     variant={
                       fieldType === "paragraph"
                         ? "primary"
@@ -234,6 +328,7 @@ const FormComponent = () => {
                     <div> Paragraph Text</div>
                   </Button>
                   <Button
+                    className="field-btn"
                     variant={
                       fieldType === "multipleChoice"
                         ? "primary"
@@ -296,16 +391,22 @@ const FormComponent = () => {
                 fieldType === "checkbox") && (
                 <div className="field-options">
                   {fieldOptions.map((option, index) => (
-                    <input
-                      key={index}
-                      className="custom-input"
-                      type="text"
-                      placeholder={`Option ${index + 1}`}
-                      value={option}
-                      onChange={(e) =>
-                        handleOptionChange(index, e.target.value)
-                      }
-                    />
+                    <div key={index} className="option-container">
+                      <input
+                        className="custom-input"
+                        type="text"
+                        placeholder={`Option ${index + 1}`}
+                        value={option}
+                        onChange={(e) =>
+                          handleOptionChange(index, e.target.value)
+                        }
+                      />
+                      <Button
+                        className="btn-close btn-remove-opt"
+                        size="lg"
+                        onClick={() => handleRemoveOption(index)}
+                      ></Button>
+                    </div>
                   ))}
                   <Button className="add-option" onClick={handleAddOption}>
                     Add Option
@@ -324,6 +425,15 @@ const FormComponent = () => {
             >
               +
             </button>
+          </div>
+          <div className="add-btn-container">
+            <Button
+              className="save-button"
+              variant="primary"
+              onClick={sendDataToServer}
+            >
+              Save
+            </Button>
           </div>
         </Col>
       </Row>

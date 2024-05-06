@@ -36,7 +36,7 @@
   display: flex;
   justify-content: end;
   align-items: center;
-  gap: 20px;
+  gap: 15px;
   margin-top: 10px;
   padding-top: 8px;
 }
@@ -77,10 +77,11 @@
 }
 
 input[type="file"]::file-selector-button {
+  margin-top: 20px;
   margin-right: 20px;
   border: none;
   background: #084cdf;
-  padding: 6px 14px;
+  padding: 3px 7px;
   border-radius: 10px;
   color: #fff;
   cursor: pointer;
@@ -91,12 +92,12 @@ input[type="file"]::file-selector-button:hover {
   background: #0d45a5;
 }
 input[type="date"] {
-  width: 18%;
+  width: 20%;
   background-color: #0080ff;
   padding: 8px;
   font-size: 14px;
   margin-top: 10px;
-  color: #ffffff;
+  color: #000000;
   border: none;
   outline: none;
   border-radius: 5px;
@@ -156,4 +157,115 @@ select {
   color: red;
   margin-top: 5px;
   font-size: 14px;
+}
+.btn-edit{
+  background-color: white !important;
+  color:  #adadad !important;
+  border: none !important;
+}
+.btn-delete{
+  background-color: white !important;
+  color:  #adadad !important;
+  border: none !important;
+}
+.btn-copy{
+  background-color: white !important;
+  color:  #adadad !important;
+  border: none !important;
+}
+.form-check-label{
+  color: #adadad;
+  }
+  .option-container{
+    display: flex;
+  }
+  .btn-remove-opt{
+    padding: 10px !important;
+    margin:5px !important;
+  }
+
+@media screen and (max-width: 600px) {
+  .box {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    background-color: white;
+    width: 90vw;
+    box-sizing: border-box;
+    background-color: white;
+    border-left: 4px solid #3066fc;
+    border-radius: 10px;
+    margin: 5px auto;
+    margin-bottom: 0;
+    padding: 10px;
+    padding-left: 15px;
+    font-size: 9px;
+  }
+  .box-top {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    background-color: white;
+    width: 90vw;
+    box-sizing: border-box;
+    background-color: white;
+    border-top: 4px solid #663ab5;
+    border-radius: 10px;
+    margin: 5px auto;
+    margin-bottom: 0;
+    padding: 5px;
+    padding-left: 15px;
+    font-size: 9px;
+  }
+  .footer {
+    width: 100%;
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    gap: 10px;
+    margin-top: 5px;
+    padding-top: 4px;
+  }
+  
+  .input-box {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 10px;
+    align-items: center;
+  }
+  
+  .custom-input-top {
+    font-size: 20px;
+  }
+  .custom-input {
+    padding: 3px;
+    border: none;
+    border-bottom: 1px solid lightgrey;
+    outline: none;
+    transition: border-color 0.3s ease;
+    margin-bottom: 5px;
+  }
+  
+  .custom-input:focus {
+    border-bottom: 2px solid rgb(91, 79, 255);
+    background-color: rgba(236, 246, 255, 0.534);
+  }
+  .field-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 20%;
+    justify-content: start;
+  }
+  .add-option {
+    margin: 5px;
+  }
+  .field-btn{
+    width: 80px;
+    height: 50px;
+    text-emphasis: none;
+
+  }
+  
 }
