@@ -167,7 +167,7 @@ const FormComponent = () => {
       // if (!response.ok) {
       //   throw new Error("Failed to save form data");
       // }
-      const data = await JSON.stringify(formData);
+      const data = await formData;
       console.log(data)
   
       // Reset the form data
