@@ -156,17 +156,19 @@ const FormComponent = () => {
       };
   
       // Send the formData to the server
-      const response = await fetch("http://localhost:3001/saveFormData", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
+      // const response = await fetch("http://localhost:3001/saveFormData", {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //   },
+      //   body: JSON.stringify(formData),
+      // });
   
-      if (!response.ok) {
-        throw new Error("Failed to save form data");
-      }
+      // if (!response.ok) {
+      //   throw new Error("Failed to save form data");
+      // }
+      const data = await JSON.stringify(formData);
+      console.log(data)
   
       // Reset the form data
       setFields([]);
@@ -205,7 +207,7 @@ const FormComponent = () => {
                 />
                 {option}
                 <Button
-                  className="btn-close"
+                  className="btn-close btn-outline-light"
                   size="sm"
                   onClick={() => handleDeleteOption(field.id, optionIndex)}
                 ></Button>
@@ -232,11 +234,11 @@ const FormComponent = () => {
                   value={option}
                 />
                 <label htmlFor={`option_${optionIndex}`}>{option}</label>
-                <Button
-                  className="btn-close"
+                {/* <Button
+                  className="btn-close btn-outline-light"
                   size="sm"
                   onClick={() => handleDeleteOption(field.id, optionIndex)}
-                ></Button>
+                ></Button> */}
               </div>
             ))}
           </div>
@@ -322,6 +324,12 @@ const FormComponent = () => {
           {fields.map((field) => renderField(field))}
           {showInput && (
             <div className="box">
+              <div className="btn-close-top">
+              <Button
+                        className="btn-close btn-outline-light "
+                        size="sm"
+                        onClick={() => setShowInput(!showInput) }
+                      ></Button></div>
               <div className="input-box">
                 <input
                   className="custom-input"
@@ -422,8 +430,8 @@ const FormComponent = () => {
                         }
                       />
                       <Button
-                        className="btn-close btn-remove-opt"
-                        size={isMobile ? "sm" : "lg"}
+                        className="btn-close btn-remove-opt btn-outline-light"
+                        size="sm"
                         onClick={() => handleRemoveOption(index)}
                       ></Button>
                     </div>
