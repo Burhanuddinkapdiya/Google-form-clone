@@ -9,6 +9,7 @@ import { BsImage } from "react-icons/bs";
 import { MdDeleteOutline } from "react-icons/md";
 import { FaRegCopy } from "react-icons/fa";
 import { FaRegEdit } from "react-icons/fa";
+import { IoAdd } from "react-icons/io5";
 import "./FormComponent.css"; // Import the CSS file
 
 const FormComponent = () => {
@@ -99,17 +100,17 @@ const FormComponent = () => {
     newOptions[index] = value;
     setFieldOptions(newOptions);
   };
-  const handleDeleteOption = (fieldId, optionIndex) => {
-    const updatedFields = fields.map((field) => {
-      if (field.id === fieldId) {
-        const updatedOptions = [...field.options];
-        updatedOptions.splice(optionIndex, 1);
-        return { ...field, options: updatedOptions };
-      }
-      return field;
-    });
-    setFields(updatedFields);
-  };
+  // const handleDeleteOption = (fieldId, optionIndex) => {
+  //   const updatedFields = fields.map((field) => {
+  //     if (field.id === fieldId) {
+  //       const updatedOptions = [...field.options];
+  //       updatedOptions.splice(optionIndex, 1);
+  //       return { ...field, options: updatedOptions };
+  //     }
+  //     return field;
+  //   });
+  //   setFields(updatedFields);
+  // };
 
   const handleDeleteField = (id) => {
     setFields(fields.filter((field) => field.id !== id));
@@ -154,22 +155,22 @@ const FormComponent = () => {
           required: field.required || false,
         })),
       };
-  
+
       // Send the formData to the server
-      // const response = await fetch("http://localhost:3001/saveFormData", {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify(formData),
-      // });
-  
-      // if (!response.ok) {
-      //   throw new Error("Failed to save form data");
-      // }
-      const data = await formData;
-      console.log(data)
-  
+      const response = await fetch("http://localhost:3001/saveFormData", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save form data");
+      }
+      // const data = await formData;
+      // console.log(data)
+
       // Reset the form data
       setFields([]);
       setFieldType("");
@@ -181,13 +182,12 @@ const FormComponent = () => {
       setEditingFieldId(null);
       setFormTitle("");
       setFormDescription("");
-  
+
       console.log("Form data saved successfully");
     } catch (error) {
       console.error("Error:", error.message);
     }
   };
-  
 
   const renderField = (field) => {
     return (
@@ -206,11 +206,11 @@ const FormComponent = () => {
                   value={option}
                 />
                 {option}
-                <Button
+                {/* <Button
                   className="btn-close btn-outline-light"
                   size="sm"
                   onClick={() => handleDeleteOption(field.id, optionIndex)}
-                ></Button>
+                ></Button> */}
               </div>
             ))}
           </div>
@@ -262,7 +262,7 @@ const FormComponent = () => {
             size="sm"
             onClick={() => handleDeleteField(field.id)}
           >
-            <MdDeleteOutline size={isMobile?20:30} />
+            <MdDeleteOutline size={isMobile ? 20 : 30} />
           </Button>
           <Button
             title="Edit"
@@ -270,7 +270,7 @@ const FormComponent = () => {
             size="sm"
             onClick={() => handleEditOptions(field.id)}
           >
-            <FaRegEdit size={isMobile?15:25} />
+            <FaRegEdit size={isMobile ? 15 : 25} />
           </Button>
           <Button
             title="Copy"
@@ -278,7 +278,7 @@ const FormComponent = () => {
             size="sm"
             onClick={() => handleDuplicateField(field.id)}
           >
-            <FaRegCopy size={isMobile?15:25} />
+            <FaRegCopy size={isMobile ? 15 : 25} />
           </Button>
           <div className="form-check form-switch">
             <label
@@ -291,7 +291,7 @@ const FormComponent = () => {
               className="form-check-input"
               type="checkbox"
               id={`required_${field.id}`}
-              checked={field.required}
+              checked={field.required || false}
               onChange={() => handleToggleRequired(field.id)}
             />
           </div>
@@ -325,11 +325,12 @@ const FormComponent = () => {
           {showInput && (
             <div className="box">
               <div className="btn-close-top">
-              <Button
-                        className="btn-close btn-outline-light "
-                        size="sm"
-                        onClick={() => setShowInput(!showInput) }
-                      ></Button></div>
+                <Button
+                  className="btn-close btn-outline-light "
+                  size="sm"
+                  onClick={() => setShowInput(!showInput)}
+                ></Button>
+              </div>
               <div className="input-box">
                 <input
                   className="custom-input"
@@ -364,17 +365,18 @@ const FormComponent = () => {
                     <div> Multiple Choice</div>
                   </Button>
                   <Button
-                  className="field-btn"
+                    className="field-btn"
                     variant={
                       fieldType === "dropdown" ? "primary" : "outline-secondary"
                     }
                     onClick={() => setFieldType("dropdown")}
                   >
                     {" "}
-                    <IoIosArrowDropdown size={isMobile ? 15 : 30}/> <div>Dropdown</div>
+                    <IoIosArrowDropdown size={isMobile ? 15 : 30} />{" "}
+                    <div>Dropdown</div>
                   </Button>
                   <Button
-                  className="field-btn"
+                    className="field-btn"
                     variant={
                       fieldType === "checkbox" ? "primary" : "outline-secondary"
                     }
@@ -384,7 +386,7 @@ const FormComponent = () => {
                     <div>Checkbox</div>
                   </Button>
                   <Button
-                  className="field-btn"
+                    className="field-btn"
                     variant={
                       fieldType === "date" ? "primary" : "outline-secondary"
                     }
@@ -395,7 +397,7 @@ const FormComponent = () => {
                   </Button>
                   {/* <Button variant={fieldType === "time" ? "primary" : "outline-secondary"} onClick={() => setFieldType("time")}>Time</Button> */}
                   <Button
-                  className="field-btn"
+                    className="field-btn"
                     variant={
                       fieldType === "image" ? "primary" : "outline-secondary"
                     }
@@ -447,12 +449,12 @@ const FormComponent = () => {
             </div>
           )}
           <div className="add-btn-container">
-            <button
-              className="round-button"
+            <Button
+              className="add-btn"
               onClick={() => setShowInput(!showInput)}
             >
-              +
-            </button>
+              <IoAdd size={isMobile ? 20 : 25} />
+            </Button>
           </div>
           <div className="add-btn-container">
             <Button

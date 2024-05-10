@@ -10,12 +10,18 @@ app.use(bodyParser.json());
 // Create a MySQL connection pool
 const pool = mysql.createPool({
   host: "localhost",
-  user: "your_mysql_username",
-  password: "your_mysql_password",
-  database: "your_mysql_database_name",
+  user: "bk",
+  password: "bk53",
+  database: "survey",
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+});
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173'); // Replace with the origin of your frontend application
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  next();
 });
 
 // Define a route to handle saving form data
