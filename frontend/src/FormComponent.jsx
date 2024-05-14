@@ -45,14 +45,17 @@ const FormComponent = () => {
       fieldType === "date" ||
       fieldType === "image"
     ) {
+      const newField = {
+        id: editingFieldId !== null ? editingFieldId : fieldCounter,
+        type: fieldType,
+        label: fieldLabel,
+        options: [...fieldOptions.filter((option) => option.trim() !== "")],
+        serialNo: editingFieldId !== null ? fields.find(field => field.id === editingFieldId).serialNo : fieldCounter, // Preserve the original serialNo if editing an existing field
+      };
+  
       setFields((prevFields) => [
         ...prevFields.filter((field) => field.id !== editingFieldId),
-        {
-          id: editingFieldId !== null ? editingFieldId : fieldCounter,
-          type: fieldType,
-          label: fieldLabel,
-          options: [...fieldOptions.filter((option) => option.trim() !== "")],
-        },
+        newField,
       ]);
       setFieldCounter(fieldCounter + 1);
       setFieldType("");
@@ -66,16 +69,19 @@ const FormComponent = () => {
       fieldOptions.some((option) => option.trim() === "")
     ) {
       setOptionError(true);
-      return; // Exit the function early if options are not present or contains empty options
+      return; // Exit the function early if options are not present or contain empty options
     } else {
+      const newField = {
+        id: editingFieldId !== null ? editingFieldId : fieldCounter,
+        type: fieldType,
+        label: fieldLabel,
+        options: [...fieldOptions],
+        serialNo: editingFieldId !== null ? fields.find(field => field.id === editingFieldId).serialNo : fieldCounter, // Preserve the original serialNo if editing an existing field
+      };
+  
       setFields((prevFields) => [
         ...prevFields.filter((field) => field.id !== editingFieldId),
-        {
-          id: editingFieldId !== null ? editingFieldId : fieldCounter,
-          type: fieldType,
-          label: fieldLabel,
-          options: [...fieldOptions],
-        },
+        newField,
       ]);
       setFieldCounter(fieldCounter + 1);
       setFieldType("");
@@ -86,6 +92,8 @@ const FormComponent = () => {
       setEditingFieldId(null);
     }
   };
+  
+  
 
   const handleAddOption = () => {
     setFieldOptions([...fieldOptions, ""]);
@@ -148,7 +156,7 @@ const FormComponent = () => {
         title: formTitle,
         description: formDescription,
         fields: fields.map((field) => ({
-          id: field.id,
+          q_id: field.id,
           type: field.type,
           label: field.label,
           options: field.options,
@@ -158,7 +166,7 @@ const FormComponent = () => {
 
       // Send the formData to the server
       const response = await fetch("http://localhost:3001/saveFormData", {
-        method: "POST",
+        method: "POST",   
         headers: {
           "Content-Type": "application/json",
         },
@@ -191,7 +199,7 @@ const FormComponent = () => {
 
   const renderField = (field) => {
     return (
-      <div className="box" key={field.id}>
+      <div className="box" key={field.id} style={{ order: field.serialNo }}>
         <h4>{field.label}</h4>
         {field.type === "paragraph" && (
           <input className="custom-input" type="text" placeholder="Paragraph" />
@@ -464,7 +472,7 @@ const FormComponent = () => {
             >
               Save
             </Button>
-          </div>
+          </div> 
         </Col>
       </Row>
     </Container>

@@ -18,9 +18,9 @@ const pool = mysql.createPool({
   queueLimit: 0,
 });
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:5173'); // Replace with the origin of your frontend application
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173"); // Replace with the origin of your frontend application
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   next();
 });
 
@@ -35,7 +35,7 @@ app.post("/saveFormData", async (req, res) => {
 
     // Insert form data into the Form table
     const [formResult] = await connection.query(
-      "INSERT INTO Form (title, description) VALUES (?, ?)",
+      "INSERT INTO survey_form (title, description) VALUES (?, ?)",
       [formData.title, formData.description]
     );
     const formId = formResult.insertId;
@@ -44,8 +44,14 @@ app.post("/saveFormData", async (req, res) => {
     await Promise.all(
       formData.fields.map(async (fieldData) => {
         await connection.query(
-          "INSERT INTO Field (form_id, type, label, options, required) VALUES (?, ?, ?, ?, ?)",
-          [formId, fieldData.type, fieldData.label, JSON.stringify(fieldData.options), fieldData.required || false]
+          "INSERT INTO survey_questions (s_id, type, label, options, required) VALUES (?, ?, ?, ?, ?)",
+          [
+            formId,
+            fieldData.type,
+            fieldData.label,
+            JSON.stringify(fieldData.options),
+            fieldData.required || false,
+          ]
         );
       })
     );
@@ -64,6 +70,36 @@ app.post("/saveFormData", async (req, res) => {
       await connection.rollback();
       connection.release();
     }
+  }
+});
+// Define a route to handle fetching form data along with field data based on form ID
+app.get("/formData/:formId", async (req, res) => {
+  try {
+    const formId = req.params.formId;
+
+    // Fetch form data and corresponding field data based on form ID using a SQL join
+    const [formData] = await pool.query(
+      "SELECT f.s_id, f.title, f.description, fi.q_id AS field_id, fi.type, fi.label, fi.options, fi.required FROM survey_form f JOIN survey_questions fi ON f.s_id = fi.s_id WHERE f.s_id = ?",
+      [formId]
+    );
+
+    // Format the fetched data as an object containing form title, description, and fields
+    const formattedData = {
+      title: formData[0].title,
+      description: formData[0].description,
+      fields: formData.map((field) => ({
+        id: field.field_id,
+        type: field.type,
+        label: field.label,
+        options: JSON.parse(field.options),
+        required: field.required,
+      })),
+    };
+
+    res.status(200).json(formattedData);
+  } catch (error) {
+    console.error("Error fetching form data:", error);
+    res.status(500).json({ error: "Failed to fetch form data" });
   }
 });
 

@@ -1,11 +1,20 @@
-import FormComponent from "./FormComponent"
 import "./App.css"
-const App = () => {
-  return (
-    <div className="main-container">
-    <FormComponent/>
-    </div>
-  )
-}
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import FormComponent from "./FormComponent";
+import SubmitForm from "./SubmitForm";
 
-export default App
+const App = () => {
+  return (<div className="main-container">
+    <Router>
+      <Routes>
+        <Route path="/" element={<FormComponent />} />
+        <Route path="/submit/:formId" element={<SubmitForm />} />
+      </Routes>
+    </Router></div>
+  );
+};
+
+export default App;
+
+
+
