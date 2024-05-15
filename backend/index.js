@@ -2,9 +2,11 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mysql = require("mysql2/promise");
+var cors = require('cors')
 
 // Create an Express application
 const app = express();
+app.use(cors());
 app.use(bodyParser.json());
 
 // Create a MySQL connection pool
@@ -72,6 +74,38 @@ app.post("/saveFormData", async (req, res) => {
     }
   }
 });
+app.post('/submitFormData', async (req, res) => {
+  const formData = req.body;
+  let connection;
+
+  try {
+    // Start a new transaction
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    // Insert the form data into the 'survey_answer' table
+    await Promise.all(formData.map(async (answer) => {
+      await connection.query('INSERT INTO survey_answers (s_id, q_id, answer) VALUES (?, ?, ?)', [answer.s_id, answer.q_id, answer.answer]);
+    }));
+
+    // Commit the transaction
+    await connection.commit();
+    connection.release();
+
+    console.log('Survey answer data saved successfully');
+    res.status(200).json({ message: 'Survey answer data saved successfully' });
+  } catch (error) {
+    console.error('Error saving survey answer data:', error);
+    res.status(500).json({ error: 'Failed to save survey answer data' });
+
+    // Rollback the transaction in case of error
+    if (connection) {
+      await connection.rollback();
+      connection.release();
+    }
+  }
+});
+
 // Define a route to handle fetching form data along with field data based on form ID
 app.get("/formData/:formId", async (req, res) => {
   try {
@@ -82,6 +116,11 @@ app.get("/formData/:formId", async (req, res) => {
       "SELECT f.s_id, f.title, f.description, fi.q_id AS field_id, fi.type, fi.label, fi.options, fi.required FROM survey_form f JOIN survey_questions fi ON f.s_id = fi.s_id WHERE f.s_id = ?",
       [formId]
     );
+
+    // Check if formData is not undefined and has at least one item
+    if (!formData || formData.length === 0) {
+      return res.status(404).json({ error: "Form data not found" });
+    }
 
     // Format the fetched data as an object containing form title, description, and fields
     const formattedData = {

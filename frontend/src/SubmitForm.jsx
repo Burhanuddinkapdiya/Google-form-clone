@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { Button, Container, Row, Col } from "react-bootstrap";
 import "./SubmitForm.css"; // Import the CSS file
 
+
 const SubmitForm = () => {
   const [fields, setFields] = useState([]);
   const [formData, setFormData] = useState({});
   const [surveyTitle, setSurveyTitle] = useState("");
   const [surveyDiscription, setSurveyDiscription] = useState("");
+  const [surveyId, setSurveyId]= useState(null);
 
   useEffect(() => {
     const fetchFormData = async () => {
@@ -20,11 +22,12 @@ const SubmitForm = () => {
         setFields(formData.fields);
         setSurveyTitle(formData.title);
         setSurveyDiscription(formData.description)
+        setSurveyId(formId);
       } catch (error) {
         console.error("Error fetching form fields:", error.message);
       }
     };
-
+    
     fetchFormData();
   }, []);
 
@@ -33,11 +36,31 @@ const SubmitForm = () => {
   };
 
   const handleSubmit = () => {
-    // Submit formData to server or handle as needed
-    console.log(formData);
-    // Reset formData
-    setFormData({});
+    // Convert formData to an array of objects
+    const formDataArray = Object.entries(formData).map(([q_id, answer]) => ({ s_id: surveyId, q_id, answer }));
+  
+    // Submit formDataArray to server
+    fetch('http://localhost:3001/submitFormData', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(formDataArray)
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Failed to save survey answer data');
+      }
+      console.log('Survey answer data saved successfully');
+      // Reset formData
+      setFormData({});
+    })
+    .catch(error => {
+      console.error('Error saving survey answer data:', error);
+    });
   };
+  
+ 
 
 
   return (
@@ -47,8 +70,6 @@ const SubmitForm = () => {
         <div className="box-top">
          <h1>{surveyTitle}</h1>
         <p>{surveyDiscription}</p>
-      
-
       </div>
           {fields.map((field) => (
             <div className="box" key={field.id} >
@@ -130,7 +151,8 @@ const SubmitForm = () => {
       <div className="submit-button">
       <Button  size="sm" variant="primary" onClick={handleSubmit}>
         Submit
-      </Button></div>
+      </Button>
+      </div>
     </Container>
   );
 };
