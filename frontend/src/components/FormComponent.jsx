@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect,  useState } from "react";
 import { Button, Container, Row, Col } from "react-bootstrap";
 import { ImParagraphCenter } from "react-icons/im";
 import { IoIosArrowDropdown } from "react-icons/io";
 import { IoIosCheckboxOutline } from "react-icons/io";
 import { BsCalendarDate } from "react-icons/bs";
 import { RiCheckboxMultipleBlankLine } from "react-icons/ri";
-import { BsImage } from "react-icons/bs";
+import { MdOutlineDriveFolderUpload } from "react-icons/md";
 import { MdDeleteOutline } from "react-icons/md";
 import { FaRegCopy } from "react-icons/fa";
 import { FaRegEdit } from "react-icons/fa";
@@ -24,6 +24,33 @@ const FormComponent = () => {
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
+  const [fileType, setFileType]= useState(".jpg"); 
+  const [fileSize, setFileSize]= useState("1"); 
+ 
+
+
+const handleFileTypeChange = (type) => {
+  setFileType(type);
+  setFieldOptions((prevOptions) => {
+    const updatedOptions = [...prevOptions]; // Create a copy of the current options
+    updatedOptions[0] = type; // Assuming the first option is for file type
+
+    return updatedOptions; // Return the updated options array
+    
+  });
+};
+
+const handleFileSizeChange = (size) => {
+setFileSize(size);
+  setFieldOptions((prevOptions) => {
+    const updatedOptions = [...prevOptions]; // Create a copy of the current options
+    updatedOptions[1] = size; // Assuming the second option is for file size
+    return updatedOptions; // Return the updated options array
+  });
+ 
+ 
+
+};
 
   useEffect(() => {
     const handleResize = () => {
@@ -43,7 +70,7 @@ const FormComponent = () => {
     if (
       fieldType === "paragraph" ||
       fieldType === "date" ||
-      fieldType === "image"
+      fieldType === "file"
     ) {
       const newField = {
         id: editingFieldId !== null ? editingFieldId : fieldCounter,
@@ -163,6 +190,7 @@ const FormComponent = () => {
           required: field.required || false,
         })),
       };
+      console.log(formData);
 
       // Send the formData to the server
       const response = await fetch("http://localhost:3001/saveFormData", {
@@ -199,10 +227,10 @@ const FormComponent = () => {
 
   const renderField = (field) => {
     return (
-      <div className="box" key={field.id} style={{ order: field.serialNo }}>
+      <div className="box" key={field.id} style={{ order: field.id }}>
         <h4>{field.label}</h4>
         {field.type === "paragraph" && (
-          <input className="custom-input" type="text" placeholder="Paragraph" />
+          <input className="custom-input" type="text" placeholder="Paragraph" disabled />
         )}
         {field.type === "multipleChoice" && (
           <div>
@@ -212,6 +240,7 @@ const FormComponent = () => {
                   type="radio"
                   name={`option_${field.id}`}
                   value={option}
+                  disabled
                 />
                 {option}
                 {/* <Button
@@ -224,9 +253,9 @@ const FormComponent = () => {
           </div>
         )}
         {field.type === "dropdown" && (
-          <select className="custom-select">
+          <select className="custom-select" >
             {field.options.map((option, optionIndex) => (
-              <option key={optionIndex}>{option}</option>
+              <option key={optionIndex} disabled>{option}</option>
             ))}
           </select>
         )}
@@ -240,6 +269,7 @@ const FormComponent = () => {
                   id={`option_${optionIndex}`}
                   name={`option_${field.id}`}
                   value={option}
+                  disabled
                 />
                 <label htmlFor={`option_${optionIndex}`}>{option}</label>
                 {/* <Button
@@ -252,17 +282,15 @@ const FormComponent = () => {
           </div>
         )}
         {field.type === "date" && (
-          <input className="custom-input" type="date" />
+          <input className="custom-input" type="date"  disabled/>
         )}
-        {field.type === "time" && (
-          <input className="custom-input" type="time" />
-        )}
-        {field.type === "image" && (
-          <div>
-            <input className="custom-input" type="file" accept="image/*" />
-            <img src={field.imageSrc} />
-          </div>
-        )}
+        {/* {field.type === "time" && (
+          <input className="custom-input" type="time" disabled />
+        )} */}
+        {field.type === "file" && (
+    <input className="custom-input" type="file" disabled/>
+)}
+
         <div className="footer">
           <Button
             title="Delete"
@@ -407,12 +435,12 @@ const FormComponent = () => {
                   <Button
                     className="field-btn"
                     variant={
-                      fieldType === "image" ? "primary" : "outline-secondary"
+                      fieldType === "file" ? "primary" : "outline-secondary"
                     }
-                    onClick={() => setFieldType("image")}
+                    onClick={() => setFieldType("file")}
                   >
-                    <BsImage size={isMobile ? 15 : 30} />
-                    <div>Image</div>
+                    <MdOutlineDriveFolderUpload size={isMobile ? 15 : 35} />
+                    <div>File</div>
                   </Button>
                 </div>
                 <Button
@@ -453,7 +481,26 @@ const FormComponent = () => {
                     <p className="error-msg">Options are required</p>
                   )}
                 </div>
-              )}
+              )}{
+                (fieldType === "file") && (
+                  <div className="file-field">
+                    <label>File Type:</label>
+    <select className="custom-select" onChange={(e) => handleFileTypeChange(e.target.value)} value={fileType}  >
+      <option value=".jpeg">JPEG</option>
+      <option value=".png">PNG</option>
+      <option value=".doc">DOC</option>
+      <option value=".pdf">PDF</option>
+    </select>
+    <label>File Size:</label>
+    <select className="custom-select" onChange={(e) => handleFileSizeChange(e.target.value)} value={fileSize}>
+      <option value="1">1 MB</option>
+      <option value="2">2 MB</option>
+      <option value="3">3 MB</option>
+      <option value="4">4 MB</option>
+      <option value="5">5 MB</option>
+    </select></div>
+                )
+              }
             </div>
           )}
           <div className="add-btn-container">

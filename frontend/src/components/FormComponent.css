@@ -65,6 +65,7 @@
 .custom-input:focus {
   border-bottom: 2px solid rgb(91, 79, 255);
   background-color: rgba(236, 246, 255, 0.534);
+  color: rgb(100, 100, 100);
 }
 .field-options {
   display: flex;
@@ -98,22 +99,24 @@ input[type="date"] {
   padding: 8px;
   font-size: 14px;
   margin-top: 10px;
-  color: #000000;
+  color: #ffffffd5;
   border: none;
   outline: none;
   border-radius: 5px;
 }
 
 input[type="time"] {
-  color: #000000;
+  color: #363636d5;
   font-size: 14px;
   width: 20%;
 }
 select {
-  color: #000000;
+  color: #363636d5;
   border: 2px solid #0080ff;
+  border-radius: 5px;
   font-size: 14px;
   width: 30%;
+  
 }
 .add-btn-container {
   display: flex;
@@ -180,6 +183,15 @@ select {
     width: 40px !important;
     height: 40px !important;
     padding: 5px !important;
+    }
+    .file-field{
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+      padding: 10px;
+      font-weight: 500;
+      color: #272727a9;
+      
     }
 
 
@@ -301,7 +313,7 @@ select {
     padding: 4px;
     font-size: 10px;
     margin-top: 5px;
-    color: #000000;
+    color: #363636d5;
     border: none;
     outline: none;
     border-radius: 5px;
