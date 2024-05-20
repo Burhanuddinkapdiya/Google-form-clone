@@ -52,9 +52,9 @@ const SubmitForm = () => {
     setFormData({ ...formData, [fieldId]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault(); // Prevent the default form submission
-
+  
     // Validate required fields
     const newFieldErrors = {};
     fields.forEach((field) => {
@@ -64,41 +64,38 @@ const SubmitForm = () => {
       }
     });
     setFieldErrors(newFieldErrors);
-
+  
     // If any required field is empty or only whitespace, prevent form submission
     if (Object.values(newFieldErrors).some((error) => error)) {
       return;
     }
-
-    // Convert formData to an array of objects
-    const formDataArray = Object.entries(formData).map(([q_id, answer]) => ({
-      s_id: surveyId,
-      q_id,
-      answer,
-    }));
-
-    // Submit formDataArray to server
-    fetch("http://localhost:3001/submitFormData", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formDataArray),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to save survey answer data");
-        }
-        console.log("Survey answer data saved successfully");
-        // Reset formData
-        setFormData({});
-        // Navigate to the success page
-        navigate("/success");
-      })
-      .catch((error) => {
-        console.error("Error saving survey answer data:", error);
-        navigate("/error", { state: { message: "Failed to submit form data." } });
+  
+    const formDataToSend = new FormData();
+    formDataToSend.append('surveyId', surveyId);
+  
+    Object.entries(formData).forEach(([key, value]) => {
+      formDataToSend.append(key, value);
+    });
+  
+    try {
+      const response = await fetch("http://localhost:3001/submitFormData", {
+        method: "POST",
+        body: formDataToSend,
       });
+  
+      if (!response.ok) {
+        throw new Error("Failed to save survey answer data");
+      }
+  
+      console.log("Survey answer data saved successfully");
+      // Reset formData
+      setFormData({});
+      // Navigate to the success page
+      navigate("/success");
+    } catch (error) {
+      console.error("Error saving survey answer data:", error);
+      navigate("/error", { state: { message: "Failed to submit form data." } });
+    }
   };
 
   return (
@@ -109,7 +106,7 @@ const SubmitForm = () => {
             <h1>{surveyTitle}</h1>
             <p>{surveyDescription}</p>
           </div>
-          <form method="post" encType="multipart/form-data" noValidate>
+          <form onSubmit={handleSubmit} method="post" encType="multipart/form-data" noValidate>
             {fields.map((field) => (
               <div className="box" key={field.id}>
                 <label>{field.label}</label>
@@ -186,6 +183,7 @@ const SubmitForm = () => {
                         ? ".jpg , jpeg"
                         : field.options[0]
                     }
+                    name={field.id}
                     onChange={(e) => handleInputChange(field.id, e.target.files[0])}
                     required={field.required ? true : false}
                   />
@@ -200,7 +198,6 @@ const SubmitForm = () => {
                 type="submit"
                 size="sm"
                 variant="primary"
-                onClick={handleSubmit}
               >
                 Submit
               </Button>

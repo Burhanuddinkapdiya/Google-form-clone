@@ -24,8 +24,8 @@ const FormComponent = () => {
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
-  const [fileType, setFileType]= useState(".jpg"); 
-  const [fileSize, setFileSize]= useState("1"); 
+  const [fileType, setFileType]= useState(""); 
+  const [fileSize, setFileSize]= useState(""); 
  
 
 
@@ -486,6 +486,7 @@ setFileSize(size);
                   <div className="file-field">
                     <label>File Type:</label>
     <select className="custom-select" onChange={(e) => handleFileTypeChange(e.target.value)} value={fileType}  >
+      <option disabled value="" >Select</option>
       <option value=".jpeg">JPEG</option>
       <option value=".png">PNG</option>
       <option value=".doc">DOC</option>
@@ -493,6 +494,7 @@ setFileSize(size);
     </select>
     <label>File Size:</label>
     <select className="custom-select" onChange={(e) => handleFileSizeChange(e.target.value)} value={fileSize}>
+      <option disabled value="">Select</option>
       <option value="1">1 MB</option>
       <option value="2">2 MB</option>
       <option value="3">3 MB</option>

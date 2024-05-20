@@ -1,13 +1,14 @@
-// Import necessary modules
 const express = require("express");
 const bodyParser = require("body-parser");
 const mysql = require("mysql2/promise");
-var cors = require('cors')
+const multer = require("multer");
+const cors = require('cors');
 
 // Create an Express application
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true })); // to support URL-encoded bodies
 
 // Create a MySQL connection pool
 const pool = mysql.createPool({
@@ -19,12 +20,26 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
 });
+
+// Middleware for CORS and headers
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173"); // Replace with the origin of your frontend application
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   next();
 });
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/'); // Ensure this directory exists
+  },
+  filename: function (req, file, cb) {
+    cb(null,file.originalname);
+  }
+});
+
+const upload = multer({ storage: storage });
 
 // Define a route to handle saving form data
 app.post("/saveFormData", async (req, res) => {
@@ -74,19 +89,52 @@ app.post("/saveFormData", async (req, res) => {
     }
   }
 });
-app.post('/submitFormData', async (req, res) => {
+
+// Define a route to handle submitting form data (including file uploads)
+app.post('/submitFormData', upload.any(), async (req, res) => {
   const formData = req.body;
+  const files = req.files;
   let connection;
 
   try {
+    // Extract and delete surveyId from formData
+    const surveyId = formData.surveyId;
+    delete formData.surveyId;
+
+    // Log formData and files for debugging
+    console.log('Form Data:', formData);
+    console.log('Files:', files);
+
     // Start a new transaction
     connection = await pool.getConnection();
     await connection.beginTransaction();
 
-    // Insert the form data into the 'survey_answer' table
-    await Promise.all(formData.map(async (answer) => {
-      await connection.query('INSERT INTO survey_answers (s_id, q_id, answer) VALUES (?, ?, ?)', [answer.s_id, answer.q_id, answer.answer]);
-    }));
+    // Process each answer and handle file uploads
+    const promises = [];
+
+    // Handle form data fields
+    Object.keys(formData).forEach(key => {
+      const answerValue = formData[key];
+      promises.push(
+        connection.query(
+          'INSERT INTO survey_answers (s_id, q_id, answer) VALUES (?, ?, ?)', 
+          [surveyId, key, answerValue]
+        )
+      );
+    });
+
+    // Handle file uploads
+    files.forEach(file => {
+      promises.push(
+        connection.query(
+          'INSERT INTO survey_answers (s_id, q_id, answer) VALUES (?, ?, ?)', 
+          [surveyId, file.fieldname, file.filename]
+        )
+      );
+    });
+
+    // Wait for all promises to complete
+    await Promise.all(promises);
 
     // Commit the transaction
     await connection.commit();
