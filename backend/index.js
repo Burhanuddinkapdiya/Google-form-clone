@@ -35,7 +35,7 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/'); // Ensure this directory exists
   },
   filename: function (req, file, cb) {
-    cb(null,file.originalname);
+    cb(null, Date.now() + '-' + file.originalname);
   }
 });
 
@@ -189,6 +189,40 @@ app.get("/formData/:formId", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch form data" });
   }
 });
+
+// Validating Form is Sumbitted Previously or Not
+
+app.get("/checkSurveyData/:formId/:itsId", async (req, res) => {
+  try {
+    const { formId, itsId } = req.params;
+    const [answers] = await pool.query(
+      "SELECT * FROM survey_answers WHERE s_id = ? AND its_id = ?",
+      [formId, itsId]
+    );
+
+    if (!answers || answers.length === 0) {
+      return res.status(404).json({ exists: false });
+    }
+
+    res.status(200).json({ exists: true });
+  } catch (error) {
+    console.error("Error checking survey data:", error);
+    res.status(500).json({ error: "Failed to check survey data" });
+  }
+});
+
+app.delete("/deleteSurveyData/:formId/:itsId", async (req, res) => {
+  try {
+    const { formId, itsId } = req.params;
+    await pool.query("DELETE FROM survey_answers WHERE s_id = ? AND its_id = ?", [formId, itsId]);
+    res.status(200).json({ message: "Survey data deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting survey data:", error);
+    res.status(500).json({ error: "Failed to delete survey data" });
+  }
+});
+
+
 
 // Start the server
 const PORT = process.env.PORT || 3001;
