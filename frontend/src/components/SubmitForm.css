@@ -38,7 +38,7 @@
     align-items: center;
     flex-direction: column;
   }
-  .error-message {
+  .field-error-message {
     padding: 5px;
     color: red;
     font-size: 0.8rem;

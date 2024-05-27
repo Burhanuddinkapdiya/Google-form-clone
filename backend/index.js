@@ -97,13 +97,17 @@ app.post('/submitFormData', upload.any(), async (req, res) => {
   let connection;
 
   try {
-    // Extract and delete surveyId from formData
+    // Extract and delete surveyId and itsId from formData
     const surveyId = formData.surveyId;
+    const itsId = formData.itsId;
     delete formData.surveyId;
+    delete formData.itsId;
 
-    // Log formData and files for debugging
-    console.log('Form Data:', formData);
-    console.log('Files:', files);
+    
+    // Validate that itsId is provided
+    if (!itsId) {
+      return res.status(400).json({ error: 'ITS ID is required' });
+    }
 
     // Start a new transaction
     connection = await pool.getConnection();
@@ -117,8 +121,8 @@ app.post('/submitFormData', upload.any(), async (req, res) => {
       const answerValue = formData[key];
       promises.push(
         connection.query(
-          'INSERT INTO survey_answers (s_id, q_id, answer) VALUES (?, ?, ?)', 
-          [surveyId, key, answerValue]
+          'INSERT INTO survey_answers (s_id, q_id, its_id, answer) VALUES (?, ?, ?, ?)', 
+          [surveyId, key, itsId, answerValue]
         )
       );
     });
@@ -127,8 +131,8 @@ app.post('/submitFormData', upload.any(), async (req, res) => {
     files.forEach(file => {
       promises.push(
         connection.query(
-          'INSERT INTO survey_answers (s_id, q_id, answer) VALUES (?, ?, ?)', 
-          [surveyId, file.fieldname, file.filename]
+          'INSERT INTO survey_answers (s_id, q_id, its_id, answer) VALUES (?, ?, ?, ?)', 
+          [surveyId, file.fieldname, itsId, file.filename]
         )
       );
     });
@@ -190,8 +194,7 @@ app.get("/formData/:formId", async (req, res) => {
   }
 });
 
-// Validating Form is Sumbitted Previously or Not
-
+// Validating if the form is submitted previously or not
 app.get("/checkSurveyData/:formId/:itsId", async (req, res) => {
   try {
     const { formId, itsId } = req.params;
@@ -211,6 +214,7 @@ app.get("/checkSurveyData/:formId/:itsId", async (req, res) => {
   }
 });
 
+// Deleting survey data
 app.delete("/deleteSurveyData/:formId/:itsId", async (req, res) => {
   try {
     const { formId, itsId } = req.params;
@@ -221,8 +225,6 @@ app.delete("/deleteSurveyData/:formId/:itsId", async (req, res) => {
     res.status(500).json({ error: "Failed to delete survey data" });
   }
 });
-
-
 
 // Start the server
 const PORT = process.env.PORT || 3001;

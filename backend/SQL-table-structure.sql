@@ -25,6 +25,7 @@ CREATE TABLE `survey_answers` (
   `s_id` int NOT NULL,
   `q_id` int NOT NULL,
   `answer` text,
+  `its_id` int,
   PRIMARY KEY (`sa_id`),
   KEY `fk_survey_form` (`s_id`),
   KEY `fk_survey_questions` (`q_id`),
