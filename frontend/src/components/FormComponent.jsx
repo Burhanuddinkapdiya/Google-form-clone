@@ -11,6 +11,7 @@ import { FaRegCopy } from "react-icons/fa";
 import { FaRegEdit } from "react-icons/fa";
 import { IoAdd } from "react-icons/io5";
 import "./FormComponent.css"; // Import the CSS file
+import TextEditor from "./TextEditor";
 
 const FormComponent = () => {
   const [fields, setFields] = useState([]);
@@ -335,7 +336,6 @@ setFileSize(size);
       </div>
     );
   };
-
   return (
     <Container className="form-container">
       <Row>
@@ -348,14 +348,21 @@ setFileSize(size);
               placeholder="Enter Title"
               onChange={(e) => setFormTitle(e.target.value)}
             />
-            <input
+           <div className="m-2 px-2">
+            <p className="my-1" style={{ color:'gray', fontSize:'24px'}}>Enter Description</p>
+           <TextEditor
+           onContentChange={(content)=>
+            {console.log(content)
+            setFormDescription(content)}}
+           />
+            {/* <input
               value={formDescription}
               className="custom-input"
               type="text"
               placeholder="Enter Description"
               onChange={(e) => setFormDescription(e.target.value)}
-            />
-          </div>
+            ></input> */}
+          </div></div>
 
           {fields.map((field) => renderField(field))}
           {showInput && (

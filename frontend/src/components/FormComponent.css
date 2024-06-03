@@ -30,6 +30,7 @@
   padding: 10px;
   padding-left: 30px;
   font-size: 18px;
+  overflow-y:scroll;
 }
 
 .footer {
