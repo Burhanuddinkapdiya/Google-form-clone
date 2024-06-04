@@ -30,7 +30,6 @@
   padding: 10px;
   padding-left: 30px;
   font-size: 18px;
-  overflow-y:scroll;
 }
 
 .footer {
@@ -194,7 +193,14 @@ select {
       color: #272727a9;
       
     }
-
+    .number-field{
+      padding: 10px;
+      font-weight: 500;
+      color: #272727a9;
+    }
+    .ql-container{
+      height: 80px !important;
+    }
 
 @media screen and (max-width: 600px) {
   .box {

@@ -1,4 +1,4 @@
-import { useEffect,  useState } from "react";
+import { useEffect, useState } from "react";
 import { Button, Container, Row, Col } from "react-bootstrap";
 import { ImParagraphCenter } from "react-icons/im";
 import { IoIosArrowDropdown } from "react-icons/io";
@@ -10,6 +10,7 @@ import { MdDeleteOutline } from "react-icons/md";
 import { FaRegCopy } from "react-icons/fa";
 import { FaRegEdit } from "react-icons/fa";
 import { IoAdd } from "react-icons/io5";
+import { GoNumber } from "react-icons/go";
 import "./FormComponent.css"; // Import the CSS file
 import TextEditor from "./TextEditor";
 
@@ -25,33 +26,31 @@ const FormComponent = () => {
   const [formTitle, setFormTitle] = useState("");
   const [formDescription, setFormDescription] = useState("");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
-  const [fileType, setFileType]= useState(""); 
-  const [fileSize, setFileSize]= useState(""); 
- 
+  const [fileType, setFileType] = useState("");
+  const [fileSize, setFileSize] = useState("");
+  const [numberRange, setNumberRange] = useState("");
 
+  const handleFileTypeChange = (type) => {
+    setFileType(type);
+    setFieldOptions((prevOptions) => {
+      const updatedOptions = [...prevOptions]; // Create a copy of the current options
+      updatedOptions[0] = type; // Assuming the first option is for file type
 
-const handleFileTypeChange = (type) => {
-  setFileType(type);
-  setFieldOptions((prevOptions) => {
-    const updatedOptions = [...prevOptions]; // Create a copy of the current options
-    updatedOptions[0] = type; // Assuming the first option is for file type
+      return updatedOptions; // Return the updated options array
+    });
+  };
+  const handleRangeChange = (e) => {
+    setNumberRange(e.target.value);
+  };
 
-    return updatedOptions; // Return the updated options array
-    
-  });
-};
-
-const handleFileSizeChange = (size) => {
-setFileSize(size);
-  setFieldOptions((prevOptions) => {
-    const updatedOptions = [...prevOptions]; // Create a copy of the current options
-    updatedOptions[1] = size; // Assuming the second option is for file size
-    return updatedOptions; // Return the updated options array
-  });
- 
- 
-
-};
+  const handleFileSizeChange = (size) => {
+    setFileSize(size);
+    setFieldOptions((prevOptions) => {
+      const updatedOptions = [...prevOptions]; // Create a copy of the current options
+      updatedOptions[1] = size; // Assuming the second option is for file size
+      return updatedOptions; // Return the updated options array
+    });
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -71,16 +70,24 @@ setFileSize(size);
     if (
       fieldType === "paragraph" ||
       fieldType === "date" ||
-      fieldType === "file"
-    ) {
+      fieldType === "file" ||
+      fieldType === "number"
+    ) 
+    {
+          if (fieldType === "number" && !numberRange) {
+        return;
+      }
       const newField = {
         id: editingFieldId !== null ? editingFieldId : fieldCounter,
         type: fieldType,
         label: fieldLabel,
-        options: [...fieldOptions.filter((option) => option.trim() !== "")],
-        serialNo: editingFieldId !== null ? fields.find(field => field.id === editingFieldId).serialNo : fieldCounter, // Preserve the original serialNo if editing an existing field
+        options:  fieldType === "number" ? [numberRange] : [...fieldOptions.filter((option) => option.trim() !== "")],
+        serialNo:
+          editingFieldId !== null
+            ? fields.find((field) => field.id === editingFieldId).serialNo
+            : fieldCounter, // Preserve the original serialNo if editing an existing field
       };
-  
+
       setFields((prevFields) => [
         ...prevFields.filter((field) => field.id !== editingFieldId),
         newField,
@@ -92,6 +99,7 @@ setFileSize(size);
       setShowInput(!showInput);
       setOptionError(false);
       setEditingFieldId(null);
+      setNumberRange("");
     } else if (
       fieldOptions.length === 0 ||
       fieldOptions.some((option) => option.trim() === "")
@@ -104,9 +112,12 @@ setFileSize(size);
         type: fieldType,
         label: fieldLabel,
         options: [...fieldOptions],
-        serialNo: editingFieldId !== null ? fields.find(field => field.id === editingFieldId).serialNo : fieldCounter, // Preserve the original serialNo if editing an existing field
+        serialNo:
+          editingFieldId !== null
+            ? fields.find((field) => field.id === editingFieldId).serialNo
+            : fieldCounter, // Preserve the original serialNo if editing an existing field
       };
-  
+
       setFields((prevFields) => [
         ...prevFields.filter((field) => field.id !== editingFieldId),
         newField,
@@ -120,8 +131,6 @@ setFileSize(size);
       setEditingFieldId(null);
     }
   };
-  
-  
 
   const handleAddOption = () => {
     setFieldOptions([...fieldOptions, ""]);
@@ -195,7 +204,7 @@ setFileSize(size);
 
       // Send the formData to the server
       const response = await fetch("http://localhost:3001/saveFormData", {
-        method: "POST",   
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
@@ -219,6 +228,7 @@ setFileSize(size);
       setEditingFieldId(null);
       setFormTitle("");
       setFormDescription("");
+      setNumberRange("");
 
       console.log("Form data saved successfully");
     } catch (error) {
@@ -231,7 +241,12 @@ setFileSize(size);
       <div className="box" key={field.id} style={{ order: field.id }}>
         <h4>{field.label}</h4>
         {field.type === "paragraph" && (
-          <input className="custom-input" type="text" placeholder="Paragraph" disabled />
+          <textarea
+            className="custom-input"
+            type="text"
+            placeholder="Paragraph"
+            disabled
+          />
         )}
         {field.type === "multipleChoice" && (
           <div>
@@ -254,9 +269,11 @@ setFileSize(size);
           </div>
         )}
         {field.type === "dropdown" && (
-          <select className="custom-select" >
+          <select className="custom-select">
             {field.options.map((option, optionIndex) => (
-              <option key={optionIndex} disabled>{option}</option>
+              <option key={optionIndex} disabled>
+                {option}
+              </option>
             ))}
           </select>
         )}
@@ -283,14 +300,25 @@ setFileSize(size);
           </div>
         )}
         {field.type === "date" && (
-          <input className="custom-input" type="date"  disabled/>
+          <input className="custom-input" type="date" disabled />
         )}
         {/* {field.type === "time" && (
           <input className="custom-input" type="time" disabled />
         )} */}
         {field.type === "file" && (
-    <input className="custom-input" type="file" disabled/>
-)}
+          <input className="custom-input" type="file" disabled />
+        )}
+        {field.type === "number" && (
+          <div>
+            <input
+              className="custom-input"
+              type="number"
+              placeholder="Number"
+              disabled
+            />
+            <span className="number-field">Range: {field.options[field.options.length - 1]}</span>
+          </div>
+        )}
 
         <div className="footer">
           <Button
@@ -348,21 +376,15 @@ setFileSize(size);
               placeholder="Enter Title"
               onChange={(e) => setFormTitle(e.target.value)}
             />
-           <div className="m-2 px-2">
-            <p className="my-1" style={{ color:'gray', fontSize:'24px'}}>Enter Description</p>
-           <TextEditor
-           onContentChange={(content)=>
-            {console.log(content)
-            setFormDescription(content)}}
-           />
-            {/* <input
-              value={formDescription}
-              className="custom-input"
-              type="text"
-              placeholder="Enter Description"
-              onChange={(e) => setFormDescription(e.target.value)}
-            ></input> */}
-          </div></div>
+            <div className="m-2 px-2">
+              <p className="my-1" style={{ color: "gray", fontSize: "24px" }}>
+                Enter Description
+              </p>
+              <TextEditor
+                onContentChange={(content) => setFormDescription(content)}
+              />
+            </div>
+          </div>
 
           {fields.map((field) => renderField(field))}
           {showInput && (
@@ -449,6 +471,16 @@ setFileSize(size);
                     <MdOutlineDriveFolderUpload size={isMobile ? 15 : 35} />
                     <div>File</div>
                   </Button>
+                  <Button
+                    className="field-btn"
+                    variant={
+                      fieldType === "number" ? "primary" : "outline-secondary"
+                    }
+                    onClick={() => setFieldType("number")}
+                  >
+                    <GoNumber size={isMobile ? 20 : 30} />
+                    <div>Number</div>
+                  </Button>
                 </div>
                 <Button
                   className="submit-button"
@@ -488,28 +520,54 @@ setFileSize(size);
                     <p className="error-msg">Options are required</p>
                   )}
                 </div>
-              )}{
-                (fieldType === "file") && (
-                  <div className="file-field">
-                    <label>File Type:</label>
-    <select className="custom-select" onChange={(e) => handleFileTypeChange(e.target.value)} value={fileType}  >
-      <option disabled value="" >Select</option>
-      <option value=".jpeg">JPEG</option>
-      <option value=".png">PNG</option>
-      <option value=".doc">DOC</option>
-      <option value=".pdf">PDF</option>
-    </select>
-    <label>File Size:</label>
-    <select className="custom-select" onChange={(e) => handleFileSizeChange(e.target.value)} value={fileSize}>
-      <option disabled value="">Select</option>
-      <option value="1">1 MB</option>
-      <option value="2">2 MB</option>
-      <option value="3">3 MB</option>
-      <option value="4">4 MB</option>
-      <option value="5">5 MB</option>
-    </select></div>
-                )
-              }
+              )}
+              {fieldType === "file" && (
+                <div className="file-field">
+                  <label>File Type:</label>
+                  <select
+                    className="custom-select"
+                    onChange={(e) => handleFileTypeChange(e.target.value)}
+                    value={fileType}
+                  >
+                    <option disabled value="">
+                      Select
+                    </option>
+                    <option value=".jpeg">JPEG</option>
+                    <option value=".png">PNG</option>
+                    <option value=".doc">DOC</option>
+                    <option value=".pdf">PDF</option>
+                  </select>
+                  <label>File Size:</label>
+                  <select
+                    className="custom-select"
+                    onChange={(e) => handleFileSizeChange(e.target.value)}
+                    value={fileSize}
+                  >
+                    <option disabled value="">
+                      Select
+                    </option>
+                    <option value="1">1 MB</option>
+                    <option value="2">2 MB</option>
+                    <option value="3">3 MB</option>
+                    <option value="4">4 MB</option>
+                    <option value="5">5 MB</option>
+                  </select>
+                </div>
+              )}
+
+              {fieldType === "number" && (
+                <div className="number-field">
+                  <label>Range: </label>
+                  <input
+                    className="custom-input"
+                    type="number"
+                    name="range"
+                    value={numberRange}
+                    onChange={handleRangeChange}
+                    min="1"
+                  />
+                </div>
+              )}
             </div>
           )}
           <div className="add-btn-container">
@@ -528,7 +586,7 @@ setFileSize(size);
             >
               Save
             </Button>
-          </div> 
+          </div>
         </Col>
       </Row>
     </Container>

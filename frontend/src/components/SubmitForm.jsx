@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button, Container, Row, Col } from "react-bootstrap";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "./SubmitForm.css"; // Import the CSS file
+import parse from 'html-react-parser'
 
 const SubmitForm = () => {
   const { itsId, formId } = useParams();
@@ -137,7 +138,7 @@ const SubmitForm = () => {
       navigate("/error", { state: { message: "Failed to submit form data." } });
     }
   };
-
+  console.log(surveyDescription)
   return (
     <Container>
       <Row>
@@ -153,7 +154,9 @@ const SubmitForm = () => {
             <div>
               <div className="box-top">
                 <h1>{surveyTitle}</h1>
-                <p>{surveyDescription}</p>
+                {/* <div>{surveyDescription}</div> */}
+                <div>{parse(surveyDescription)}</div>
+                {/* <div dangerouslySetInnerHTML={{ __html: surveyDescription }}/> */}
               </div>
               <form onSubmit={handleSubmit} method="post" encType="multipart/form-data" noValidate>
                 {fields.map((field) => (
