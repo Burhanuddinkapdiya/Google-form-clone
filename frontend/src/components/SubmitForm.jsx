@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button, Container, Row, Col } from "react-bootstrap";
-import 'bootstrap/dist/css/bootstrap.min.css';
+import "bootstrap/dist/css/bootstrap.min.css";
 import "./SubmitForm.css"; // Import the CSS file
-import parse from 'html-react-parser'
+import parse from "html-react-parser";
 
 const SubmitForm = () => {
   const { itsId, formId } = useParams();
@@ -13,6 +13,7 @@ const SubmitForm = () => {
   const [surveyDescription, setSurveyDescription] = useState("");
   const [dataExists, setDataExists] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [maxValue, setMaxValue] = useState(999);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,7 +21,9 @@ const SubmitForm = () => {
       // Fetch form data based on formId
       const fetchFormData = async () => {
         try {
-          const response = await fetch(`http://localhost:3001/formData/${formId}`);
+          const response = await fetch(
+            `http://localhost:3001/formData/${formId}`
+          );
           if (!response.ok) {
             throw new Error("Failed to fetch form fields");
           }
@@ -39,14 +42,18 @@ const SubmitForm = () => {
           setFieldErrors(initialFieldErrors);
         } catch (error) {
           console.error("Error fetching form fields:", error.message);
-          navigate("/error", { state: { message: "Failed to fetch form data." } });
+          navigate("/error", {
+            state: { message: "Failed to fetch form data." },
+          });
         }
       };
 
       // Check if survey data exists for the given formId and itsId
       const fetchSurveyData = async () => {
         try {
-          const response = await fetch(`http://localhost:3001/checkSurveyData/${formId}/${itsId}`);
+          const response = await fetch(
+            `http://localhost:3001/checkSurveyData/${formId}/${itsId}`
+          );
           if (response.ok) {
             setDataExists(true); // Data exists
           } else {
@@ -72,10 +79,11 @@ const SubmitForm = () => {
 
   const handleEditSurvey = async () => {
     try {
-      await fetch(`http://localhost:3001/deleteSurveyData/${formId}/${itsId}`, { method: "DELETE" });
+      await fetch(`http://localhost:3001/deleteSurveyData/${formId}/${itsId}`, {
+        method: "DELETE",
+      });
       setDataExists(false);
       navigate(`/survey/${formId}/${itsId}`);
-      
     } catch (error) {
       console.error("Error deleting survey data:", error);
     }
@@ -86,7 +94,9 @@ const SubmitForm = () => {
     if (field && field.type === "file") {
       const fileSizeLimit = field.options[1]; // Assuming options[1] is the file size limit in MB
       if (value instanceof File && value.size > fileSizeLimit * 1024 * 1024) {
-        alert(`File size exceeds the maximum allowed size of ${fileSizeLimit} MB.`);
+        alert(
+          `File size exceeds the maximum allowed size of ${fileSizeLimit} MB.`
+        );
         return;
       }
     }
@@ -101,7 +111,10 @@ const SubmitForm = () => {
     const newFieldErrors = {};
     fields.forEach((field) => {
       const value = formData[field.id];
-      if (field.required && (!value || (typeof value === 'string' && value.trim() === ''))) {
+      if (
+        field.required &&
+        (!value || (typeof value === "string" && value.trim() === ""))
+      ) {
         newFieldErrors[field.id] = true;
       }
     });
@@ -113,8 +126,8 @@ const SubmitForm = () => {
     }
 
     const formDataToSend = new FormData();
-    formDataToSend.append('surveyId', formId);
-    formDataToSend.append('itsId', itsId);
+    formDataToSend.append("surveyId", formId);
+    formDataToSend.append("itsId", itsId);
 
     Object.entries(formData).forEach(([key, value]) => {
       formDataToSend.append(key, value);
@@ -138,7 +151,34 @@ const SubmitForm = () => {
       navigate("/error", { state: { message: "Failed to submit form data." } });
     }
   };
-  console.log(surveyDescription)
+
+  // Calculate max value for number fields
+  useEffect(() => {
+    fields.forEach((field) => {
+      if (field.type === "number" && field.options && field.options[0]) {
+        const maxDigits = field.options[0];
+        const newMaxValue = Math.pow(10, maxDigits) - 1;
+        setMaxValue(newMaxValue);
+      }
+    });
+  }, [fields]);
+
+  const handleNumberChange = (fieldId, e) => {
+    const inputValue = e.target.value;
+    const numericValue = Number(inputValue);
+
+    if ((numericValue >= 0 && numericValue <= maxValue) || inputValue === "") {
+      handleInputChange(fieldId, inputValue);
+    }
+  };
+  const handleNumberInput = (e) => {
+    const numericValue = Number(e.target.value);
+
+    if (numericValue > maxValue) {
+      e.target.value = e.target.value.slice(0, -1);
+    }
+  };  
+
   return (
     <Container>
       <Row>
@@ -147,25 +187,34 @@ const SubmitForm = () => {
             <p className="alert">Loading...</p>
           ) : dataExists ? (
             <div className="text-center">
-              <p className="alert alert-warning">Previous answers will be deleted.</p>
-              <button className="btn btn-danger" onClick={handleEditSurvey}>Edit Survey</button>
+              <p className="alert alert-warning">
+                Previous answers will be deleted.
+              </p>
+              <button className="btn btn-danger" onClick={handleEditSurvey}>
+                Edit Survey
+              </button>
             </div>
           ) : (
             <div>
               <div className="box-top">
                 <h1>{surveyTitle}</h1>
-                {/* <div>{surveyDescription}</div> */}
                 <div>{parse(surveyDescription)}</div>
-                {/* <div dangerouslySetInnerHTML={{ __html: surveyDescription }}/> */}
               </div>
-              <form onSubmit={handleSubmit} method="post" encType="multipart/form-data" noValidate>
+              <form
+                onSubmit={handleSubmit}
+                method="post"
+                encType="multipart/form-data"
+                noValidate
+              >
                 {fields.map((field) => (
                   <div className="box" key={field.id}>
                     <label>{field.label}</label>
                     {field.type === "paragraph" && (
                       <textarea
                         className="custom-input"
-                        onChange={(e) => handleInputChange(field.id, e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange(field.id, e.target.value)
+                        }
                         required={field.required}
                       />
                     )}
@@ -178,7 +227,9 @@ const SubmitForm = () => {
                               type="radio"
                               name={`option_${field.id}`}
                               value={option}
-                              onChange={(e) => handleInputChange(field.id, e.target.value)}
+                              onChange={(e) =>
+                                handleInputChange(field.id, e.target.value)
+                              }
                               required={field.required}
                             />
                             {option}
@@ -189,7 +240,9 @@ const SubmitForm = () => {
                     {field.type === "dropdown" && (
                       <select
                         className="custom-select"
-                        onChange={(e) => handleInputChange(field.id, e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange(field.id, e.target.value)
+                        }
                         required={field.required}
                       >
                         <option value="">Select {field.label}</option>
@@ -210,10 +263,14 @@ const SubmitForm = () => {
                               id={`option_${optionIndex}`}
                               name={`option_${field.id}`}
                               value={option}
-                              onChange={(e) => handleInputChange(field.id, e.target.value)}
+                              onChange={(e) =>
+                                handleInputChange(field.id, e.target.value)
+                              }
                               required={field.required}
                             />
-                            <label htmlFor={`option_${optionIndex}`}>{option}</label>
+                            <label htmlFor={`option_${optionIndex}`}>
+                              {option}
+                            </label>
                           </div>
                         ))}
                       </div>
@@ -222,7 +279,9 @@ const SubmitForm = () => {
                       <input
                         className="custom-input"
                         type="date"
-                        onChange={(e) => handleInputChange(field.id, e.target.value)}
+                        onChange={(e) =>
+                          handleInputChange(field.id, e.target.value)
+                        }
                         required={field.required}
                       />
                     )}
@@ -236,21 +295,33 @@ const SubmitForm = () => {
                             : field.options[0]
                         }
                         name={field.id}
-                        onChange={(e) => handleInputChange(field.id, e.target.files[0])}
+                        onChange={(e) =>
+                          handleInputChange(field.id, e.target.files[0])
+                        }
                         required={field.required}
                       />
                     )}
+                    {field.type === "number" && (
+                      <input
+                        type="number"
+                        className="custom-input"
+                        min={0}
+                        max={maxValue}
+                        onChange={(e) =>{console.log(maxValue);
+                           handleNumberChange(field.id, e)}}
+                        required={field.required}
+                        onInput={handleNumberInput}
+                      />
+                    )}
                     {fieldErrors[field.id] && (
-                      <span className="field-error-message">This field is required.</span>
+                      <span className="field-error-message">
+                        This field is required.
+                      </span>
                     )}
                   </div>
                 ))}
                 <div className="submit-button">
-                  <Button
-                    type="submit"
-                    size="sm"
-                    variant="primary"
-                  >
+                  <Button type="submit" size="sm" variant="primary">
                     Submit
                   </Button>
                 </div>
