@@ -71,11 +71,12 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  width: 30%;
+  width: 100%;
   justify-content: start;
 }
 .add-option {
   margin: 10px;
+  width: 30%;
 }
 
 input[type="file"]::file-selector-button {
@@ -123,6 +124,13 @@ select {
   justify-content: center;
   margin: 10px;
 }
+.save-btn-container{
+  display: flex;
+  justify-content: center;
+  margin: auto;
+  gap:1rem
+}
+
 
 .options{
   display: flex;
@@ -163,7 +171,7 @@ select {
   }
   .option-container{
     display: flex;
-    margin: auto;
+    align-items: center;
   }
   .btn-remove-opt{
     padding: 10px !important;
@@ -199,7 +207,8 @@ select {
       color: #272727a9;
     }
     .ql-container{
-      height: 80px !important;
+      height: fit-content !important;
+      min-height: 80px;
     }
 
 @media screen and (max-width: 600px) {
@@ -273,7 +282,7 @@ select {
     display: flex;
     flex-direction: column;
     gap: 1px;
-    width: 30%;
+    width: 100%;
     justify-content: center;
     align-items: center;
   }
@@ -281,6 +290,7 @@ select {
     margin: 5px;
     padding: 4px !important;
     font-size: 10px !important;
+    width: 30%;
   }
   .field-btn{
     width: 55px;

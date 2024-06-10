@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Container, Row, Col } from "react-bootstrap";
+import { Button, Container, Row, Col} from "react-bootstrap";
 import { ImParagraphCenter } from "react-icons/im";
 import { IoIosArrowDropdown } from "react-icons/io";
 import { IoIosCheckboxOutline } from "react-icons/io";
@@ -13,8 +13,11 @@ import { IoAdd } from "react-icons/io5";
 import { GoNumber } from "react-icons/go";
 import "./FormComponent.css"; // Import the CSS file
 import TextEditor from "./TextEditor";
+import { useNavigate} from "react-router-dom";
 
 const FormComponent = () => {
+  const navigate = useNavigate();
+
   const [fields, setFields] = useState([]);
   const [fieldType, setFieldType] = useState("");
   const [fieldLabel, setFieldLabel] = useState("");
@@ -72,22 +75,26 @@ const FormComponent = () => {
       fieldType === "date" ||
       fieldType === "file" ||
       fieldType === "number"
-    ) 
-    {
-          if (fieldType === "number" && !numberRange) {
+    ) {
+      if (fieldType === "number" && !numberRange) {
         return;
       }
       const newField = {
         id: editingFieldId !== null ? editingFieldId : fieldCounter,
         type: fieldType,
         label: fieldLabel,
-        options:  fieldType === "number" ? [numberRange] : [...fieldOptions.filter((option) => option.trim() !== "")],
+        options:
+          fieldType === "number"
+            ? [numberRange]
+            : [...fieldOptions.filter((option) => option.trim() !== "")],
         serialNo:
           editingFieldId !== null
             ? fields.find((field) => field.id === editingFieldId).serialNo
             : fieldCounter, // Preserve the original serialNo if editing an existing field
+        p_q_id: null, // Default to null for parent fields
+        on_value: null // Default to null for parent fields
       };
-
+  
       setFields((prevFields) => [
         ...prevFields.filter((field) => field.id !== editingFieldId),
         newField,
@@ -115,9 +122,11 @@ const FormComponent = () => {
         serialNo:
           editingFieldId !== null
             ? fields.find((field) => field.id === editingFieldId).serialNo
-            : fieldCounter, // Preserve the original serialNo if editing an existing field
+            : fieldCounter,
+        p_q_id: null, // Default to null for parent fields
+        on_value: null // Default to null for parent fields
       };
-
+  
       setFields((prevFields) => [
         ...prevFields.filter((field) => field.id !== editingFieldId),
         newField,
@@ -131,6 +140,7 @@ const FormComponent = () => {
       setEditingFieldId(null);
     }
   };
+  
 
   const handleAddOption = () => {
     setFieldOptions([...fieldOptions, ""]);
@@ -192,16 +202,20 @@ const FormComponent = () => {
       const formData = {
         title: formTitle,
         description: formDescription,
-        fields: fields.map((field) => ({
-          q_id: field.id,
-          type: field.type,
-          label: field.label,
-          options: field.options,
-          required: field.required || false,
-        })),
+        fields: fields.map((field) => {
+          return {
+            id: field.id,
+            type: field.type,
+            label: field.label,
+            options: field.options,
+            serialNo: field.serialNo,
+            p_q_id: field.p_q_id !== undefined ? field.p_q_id : null,
+            on_value: field.on_value !== undefined ? field.on_value : null,
+          };
+        }),
       };
       console.log(formData);
-
+  
       // Send the formData to the server
       const response = await fetch("http://localhost:3001/saveFormData", {
         method: "POST",
@@ -210,13 +224,20 @@ const FormComponent = () => {
         },
         body: JSON.stringify(formData),
       });
-
+      if(response.ok){
+         // Extract formId from the response
+         const responseData = await response.json();
+         return responseData.formId; // Return formId
+      }
       if (!response.ok) {
         throw new Error("Failed to save form data");
       }
+
+      
+  
       // const data = await formData;
       // console.log(data)
-
+  
       // Reset the form data
       setFields([]);
       setFieldType("");
@@ -229,15 +250,36 @@ const FormComponent = () => {
       setFormTitle("");
       setFormDescription("");
       setNumberRange("");
-
+      navigate("/success", {
+        state:{message:"Form Created Successfully!"}
+      });
+  
       console.log("Form data saved successfully");
     } catch (error) {
       console.error("Error:", error.message);
+      navigate("error",{
+        state: { message: "Failed to save the form. Please try again later." },
+      });
+    }
+  };
+  const handleAddSubQuestionProceed = async () => {
+    try {
+      const formId = await sendDataToServer(); // Call sendDataToServer to save form data and get formId
+      if (formId) {
+        // Navigate to the formId route if formId is available
+        navigate(`/${formId}`);
+      }
+    } catch (error) {
+      navigate('/error',{
+        state:{message:"An error occured!!"}
+      })
     }
   };
 
   const renderField = (field) => {
+    // const subQuestions = fields.filter((subField) => subField.p_q_id === field.id);
     return (
+      <>
       <div className="box" key={field.id} style={{ order: field.id }}>
         <h4>{field.label}</h4>
         {field.type === "paragraph" && (
@@ -258,12 +300,7 @@ const FormComponent = () => {
                   value={option}
                   disabled
                 />
-                {option}
-                {/* <Button
-                  className="btn-close btn-outline-light"
-                  size="sm"
-                  onClick={() => handleDeleteOption(field.id, optionIndex)}
-                ></Button> */}
+              <label style={{width:"5rem"}}> {option} </label>
               </div>
             ))}
           </div>
@@ -316,9 +353,12 @@ const FormComponent = () => {
               placeholder="Number"
               disabled
             />
-            <span className="number-field">Range: {field.options[field.options.length - 1]}</span>
+            <span className="number-field">
+              Range: {field.options[field.options.length - 1]}
+            </span>
           </div>
         )}
+        
 
         <div className="footer">
           <Button
@@ -361,7 +401,10 @@ const FormComponent = () => {
             />
           </div>
         </div>
+      
       </div>
+        </>
+      
     );
   };
   return (
@@ -385,7 +428,6 @@ const FormComponent = () => {
               />
             </div>
           </div>
-
           {fields.map((field) => renderField(field))}
           {showInput && (
             <div className="box">
@@ -491,9 +533,35 @@ const FormComponent = () => {
                   Add
                 </Button>
               </div>
-              {(fieldType === "multipleChoice" ||
-                fieldType === "dropdown" ||
-                fieldType === "checkbox") && (
+              {fieldType === "multipleChoice" && (
+                <div className="field-options">
+                  {fieldOptions.map((option, index) => (
+                    <div key={index} className="option-container">
+                      <input
+                        className="custom-input"
+                        type="text"
+                        placeholder={`Option ${index + 1}`}
+                        value={option}
+                        onChange={(e) =>
+                          handleOptionChange(index, e.target.value)
+                        }
+                      />
+                      <Button
+                        className="btn-close btn-remove-opt btn-outline-light"
+                        size="sm"
+                        onClick={() => handleRemoveOption(index)}
+                      ></Button>
+                    </div>
+                  ))}
+                  <Button className="add-option" onClick={handleAddOption}>
+                    Add Option
+                  </Button>
+                  {optionError && (
+                    <p className="error-msg">Options are required</p>
+                  )}
+                </div>
+              )}
+              {(fieldType === "dropdown" || fieldType === "checkbox") && (
                 <div className="field-options">
                   {fieldOptions.map((option, index) => (
                     <div key={index} className="option-container">
@@ -578,13 +646,20 @@ const FormComponent = () => {
               <IoAdd size={isMobile ? 20 : 25} />
             </Button>
           </div>
-          <div className="add-btn-container">
+          <div className="save-btn-container">
             <Button
               className="save-button"
               variant="primary"
               onClick={sendDataToServer}
             >
-              Save
+              Save Form
+            </Button>
+            <Button
+              className="save-button"
+              variant="primary"
+              onClick={handleAddSubQuestionProceed}
+            >
+            Add Sub Questions
             </Button>
           </div>
         </Col>

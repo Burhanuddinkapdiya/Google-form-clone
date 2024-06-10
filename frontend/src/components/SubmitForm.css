@@ -43,6 +43,23 @@
     color: red;
     font-size: 0.8rem;
   }
+  .box-sub-question{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    background-color: white;
+    width: 45vw;
+    box-sizing: border-box;
+    background-color: white;
+    border-left: 3px solid #3066fc;
+    border-right: 3px solid #3066fc;
+    border-radius: 10px;
+    margin: 20px 0 ;
+    margin-bottom: 0;
+    padding: 10px;
+    padding-left: 30px;
+    font-size: 18px;
+  }
   
   @media screen and (max-width: 600px) {
     .box {

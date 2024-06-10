@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 const mysql = require("mysql2/promise");
 const multer = require("multer");
 const cors = require('cors');
+const path = require('path');
 
 // Create an Express application
 const app = express();
@@ -20,6 +21,9 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
 });
+
+// Serve static files from the "uploads" directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Middleware for CORS and headers
 app.use((req, res, next) => {
@@ -41,13 +45,24 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+// Route to handle image uploads
+app.post('/upload', upload.single('image'), (req, res) => {
+  if (req.file) {
+    const imageUrl = `http://localhost:3001/uploads/${req.file.filename}`;
+    res.status(200).json({ imageUrl });
+  } else {
+    res.status(400).json({ error: 'Image upload failed' });
+  }
+});
+
 // Define a route to handle saving form data
 app.post("/saveFormData", async (req, res) => {
+  let connection;
   try {
     const formData = req.body;
 
     // Start a new transaction
-    const connection = await pool.getConnection();
+    connection = await pool.getConnection();
     await connection.beginTransaction();
 
     // Insert form data into the Form table
@@ -61,13 +76,15 @@ app.post("/saveFormData", async (req, res) => {
     await Promise.all(
       formData.fields.map(async (fieldData) => {
         await connection.query(
-          "INSERT INTO survey_questions (s_id, type, label, options, required) VALUES (?, ?, ?, ?, ?)",
+          "INSERT INTO survey_questions (s_id, type, label, options, required, p_q_id, on_value) VALUES (?, ?, ?, ?, ?, ?, ?)",
           [
             formId,
             fieldData.type,
             fieldData.label,
             JSON.stringify(fieldData.options),
             fieldData.required || false,
+            fieldData.p_q_id || null,
+            fieldData.on_value || null,
           ]
         );
       })
@@ -77,7 +94,8 @@ app.post("/saveFormData", async (req, res) => {
     await connection.commit();
     connection.release();
 
-    res.status(200).json({ message: "Form data saved successfully" });
+    // Send the formId in the response
+    res.status(200).json({ formId, message: "Form data saved successfully" });
   } catch (error) {
     console.error("Error saving form data:", error);
     res.status(500).json({ error: "Failed to save form data" });
@@ -89,6 +107,54 @@ app.post("/saveFormData", async (req, res) => {
     }
   }
 });
+
+
+// Define a route to handle saving form data
+app.post("/saveSubQuestion", async (req, res) => {
+  let connection;
+  try {
+    const subFieldsData = req.body;
+
+    // Start a new transaction
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    // Loop through each sub-field data and insert into survey_questions table
+    await Promise.all(
+      subFieldsData.map(async (subField) => {
+        await connection.query(
+          "INSERT INTO survey_questions (s_id, type, label, options, required, p_q_id, on_value) VALUES (?, ?, ?, ?, ?, ?, ?)",
+          [
+            subField.surveyId,
+            subField.type,
+            subField.label,
+            JSON.stringify(subField.options),
+            subField.required || false,
+            subField.p_q_id,
+            subField.on_value,
+          ]
+        );
+      })
+    );
+
+    // Commit the transaction
+    await connection.commit();
+    connection.release();
+
+    res.status(200).json({ message: "Sub-questions saved successfully" });
+  } catch (error) {
+    console.error("Error saving sub-questions:", error);
+    res.status(500).json({ error: "Failed to save sub-questions" });
+
+    // Rollback the transaction in case of error
+    if (connection) {
+      await connection.rollback();
+      connection.release();
+    }
+  }
+});
+
+
 
 // Define a route to handle submitting form data (including file uploads)
 app.post('/submitFormData', upload.any(), async (req, res) => {
@@ -103,7 +169,6 @@ app.post('/submitFormData', upload.any(), async (req, res) => {
     delete formData.surveyId;
     delete formData.itsId;
 
-    
     // Validate that itsId is provided
     if (!itsId) {
       return res.status(400).json({ error: 'ITS ID is required' });
@@ -158,6 +223,8 @@ app.post('/submitFormData', upload.any(), async (req, res) => {
   }
 });
 
+
+
 // Define a route to handle fetching form data along with field data based on form ID
 app.get("/formData/:formId", async (req, res) => {
   try {
@@ -165,7 +232,7 @@ app.get("/formData/:formId", async (req, res) => {
 
     // Fetch form data and corresponding field data based on form ID using a SQL join
     const [formData] = await pool.query(
-      "SELECT f.s_id, f.title, f.description, fi.q_id AS field_id, fi.type, fi.label, fi.options, fi.required FROM survey_form f JOIN survey_questions fi ON f.s_id = fi.s_id WHERE f.s_id = ?",
+      "SELECT f.s_id, f.title, f.description, fi.q_id AS field_id, fi.type, fi.label, fi.options, fi.required, fi.p_q_id, fi.on_value FROM survey_form f JOIN survey_questions fi ON f.s_id = fi.s_id WHERE f.s_id = ?",
       [formId]
     );
 
@@ -184,6 +251,8 @@ app.get("/formData/:formId", async (req, res) => {
         label: field.label,
         options: JSON.parse(field.options),
         required: field.required,
+        p_q_id: field.p_q_id,
+        on_value:field.on_value
       })),
     };
 
