@@ -206,10 +206,7 @@ select {
       font-weight: 500;
       color: #272727a9;
     }
-    .ql-container{
-      height: fit-content !important;
-      min-height: 80px;
-    }
+   
 
 @media screen and (max-width: 600px) {
   .box {

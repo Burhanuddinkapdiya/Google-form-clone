@@ -224,19 +224,15 @@ const FormComponent = () => {
         },
         body: JSON.stringify(formData),
       });
-      if(response.ok){
-         // Extract formId from the response
-         const responseData = await response.json();
-         return responseData.formId; // Return formId
-      }
+      
       if (!response.ok) {
         throw new Error("Failed to save form data");
       }
-
-      
   
-      // const data = await formData;
-      // console.log(data)
+      // Extract formId from the response
+      const responseData = await response.json();
+      const formId = responseData.formId; // Get formId from response
+      console.log("Form data saved successfully", formId);
   
       // Reset the form data
       setFields([]);
@@ -250,18 +246,22 @@ const FormComponent = () => {
       setFormTitle("");
       setFormDescription("");
       setNumberRange("");
+  
+      // Navigate to the success page with the formId
       navigate("/success", {
-        state:{message:"Form Created Successfully!"}
+        state: { message: "Form Created Successfully!", formId: formId }
       });
   
-      console.log("Form data saved successfully");
+      return formId; // Return formId
+  
     } catch (error) {
       console.error("Error:", error.message);
-      navigate("error",{
+      navigate("/error", {
         state: { message: "Failed to save the form. Please try again later." },
       });
     }
   };
+  
   const handleAddSubQuestionProceed = async () => {
     try {
       const formId = await sendDataToServer(); // Call sendDataToServer to save form data and get formId
@@ -634,7 +634,9 @@ const FormComponent = () => {
                     onChange={handleRangeChange}
                     min="1"
                   />
+                 {numberRange === "" && <p className="error-msg">Range is required</p>} {/* Add this line */}
                 </div>
+  
               )}
             </div>
           )}

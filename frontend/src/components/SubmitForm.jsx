@@ -32,7 +32,7 @@ const SubmitForm = () => {
           setFields(formData.fields);
           setSurveyTitle(formData.title);
           setSurveyDescription(formData.description);
-          console.log(formData)
+          console.log(formData);
 
           // Initialize field errors state
           const initialFieldErrors = {};
@@ -136,11 +136,11 @@ const SubmitForm = () => {
       ) {
         newFieldErrors[field.id] = true;
       }
-      // if (field.type === "number" && value.length != field.options[0]) {
-      //   console.log(value.toString().length, field.options[0]);
-      //   newFieldErrors[field.id] = "true";
-      // }
+      if (field.type === "number" && value.length !== maxValue.toString().length) {
+        newFieldErrors[field.id] = `Number must be exactly ${maxValue.toString().length}`;
+      }
     });
+
     setFieldErrors(newFieldErrors);
 
     // If any required field is empty or only whitespace, prevent form submission
@@ -169,7 +169,7 @@ const SubmitForm = () => {
       console.log("Survey answer data saved successfully");
       setFormData({});
       navigate("/success", {
-        state:{message:"Form Submitted Successfully!"}
+        state: { message: "Form Submitted Successfully!" },
       });
     } catch (error) {
       console.error("Error saving survey answer data:", error);
@@ -207,7 +207,9 @@ const SubmitForm = () => {
 
   const renderChildFields = (parentId, parentValue) => {
     return fields
-      .filter((field) => field.p_q_id === parentId && field.on_value === parentValue)
+      .filter(
+        (field) => field.p_q_id === parentId && field.on_value === parentValue
+      )
       .map((field) => (
         <div className="box-sub-question" key={field.id}>
           <label>{field.label}</label>
@@ -227,7 +229,9 @@ const SubmitForm = () => {
                     type="radio"
                     name={`option_${field.id}`}
                     value={option}
-                    onChange={(e) => handleInputChange(field.id, e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange(field.id, e.target.value)
+                    }
                     required={field.required}
                   />
                   {option}
@@ -259,7 +263,9 @@ const SubmitForm = () => {
                     id={`option_${optionIndex}`}
                     name={`option_${field.id}`}
                     value={option}
-                    onChange={(e) => handleInputChange(field.id, e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange(field.id, e.target.value)
+                    }
                     required={field.required}
                   />
                   <label htmlFor={`option_${optionIndex}`}>{option}</label>
@@ -279,7 +285,9 @@ const SubmitForm = () => {
             <input
               className="custom-input"
               type="file"
-              accept={field.options[0] === ".jpeg" ? ".jpg, .jpeg" : field.options[0]}
+              accept={
+                field.options[0] === ".jpeg" ? ".jpg, .jpeg" : field.options[0]
+              }
               name={field.id}
               onChange={(e) => handleInputChange(field.id, e.target.files[0])}
               required={field.required}
@@ -289,7 +297,7 @@ const SubmitForm = () => {
             <input
               type="number"
               className="custom-input"
-              min={0}
+              min={maxValue}
               max={maxValue}
               onChange={(e) => {
                 console.log(maxValue);
@@ -300,7 +308,11 @@ const SubmitForm = () => {
             />
           )}
           {fieldErrors[field.id] && (
-            <span className="field-error-message">This field is required.</span>
+            <span className="field-error-message">
+              {fieldErrors[field.id] === true
+                ? "This field is required."
+                : fieldErrors[field.id]}
+            </span>
           )}
         </div>
       ));
@@ -325,7 +337,7 @@ const SubmitForm = () => {
             <div>
               <div className="box-top">
                 <h1>{surveyTitle}</h1>
-                <div>{parse(surveyDescription)}</div>
+                <div className="description">{parse(surveyDescription)}</div>
               </div>
               <form
                 onSubmit={handleSubmit}
@@ -361,9 +373,9 @@ const SubmitForm = () => {
                                 required={field.required}
                               />
                               {option}
-                              
+
                               {/* {renderChildFields(field.id, option)} */}
-                              </div>
+                            </div>
                           ))}
                         </div>
                       )}
@@ -435,7 +447,7 @@ const SubmitForm = () => {
                         <input
                           type="number"
                           className="custom-input"
-                          min={0}
+                          min={maxValue}
                           max={maxValue}
                           onChange={(e) => {
                             console.log(maxValue);
@@ -447,7 +459,9 @@ const SubmitForm = () => {
                       )}
                       {fieldErrors[field.id] && (
                         <span className="field-error-message">
-                          This field is required.
+                          {fieldErrors[field.id] === true
+                            ? "This field is required."
+                            : fieldErrors[field.id]}
                         </span>
                       )}
                       {renderChildFields(field.id, formData[field.id])}

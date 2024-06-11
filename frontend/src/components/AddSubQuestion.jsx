@@ -236,7 +236,7 @@ const AddSubQuestion = () => {
         <Col>
           <div className="box-top">
             <h1>{surveyTitle}</h1>
-            <div>{parse(surveyDescription)}</div>
+            <div className="description">{parse(surveyDescription)}</div>
           </div>
           {fields.map((field) => (
             <div className="box" key={field.id}>

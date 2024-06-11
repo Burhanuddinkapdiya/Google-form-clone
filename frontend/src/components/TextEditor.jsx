@@ -1,62 +1,75 @@
-import 'quill/dist/quill.snow.css';
-import { useEffect, useState } from 'react';
-import ReactQuill from 'react-quill';
-import PropTypes from 'prop-types';
+// src/components/TextEditor.js
+import { useEffect, useState } from "react";
+import { CKEditor } from "@ckeditor/ckeditor5-react";
+import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
+import "./TextEditor.css";
+import { PropTypes } from "prop-types";
+import axios from 'axios'
 
-const TextEditor = ({ onContentChange }) => {
-    const [content, setContent] = useState("");
+const TextEditor = ({ onContentChange, reset }) => {
+  const [editorData, setEditorData] = useState("");
 
-    const modules = {
-        toolbar: [
-            [{ size: ["small", false, "large", "huge"] }],
-            ["bold", "italic", "underline", "strike", "blockquote"],
-            [{ list: "ordered" }, { list: "bullet" }],
-            ["link", "image"],
-            [
-                { list: "ordered" },
-                { list: "bullet" },
-                { indent: "-1" },
-                { indent: "+1" },
-                { align: [] }
-            ],
-            [{ "color": ["#000000", "#e60000", "#ff9900", "#ffff00", "#008a00", "#0066cc", "#9933ff", "#ffffff", "#facccc", "#ffebcc", "#ffffcc", "#cce8cc", "#cce0f5", "#ebd6ff", "#bbbbbb", "#f06666", "#ffc266", "#ffff66", "#66b966", "#66a3e0", "#c285ff", "#888888", "#a10000", "#b26b00", "#b2b200", "#006100", "#0047b2", "#6b24b2", "#444444", "#5c0000", "#663d00", "#666600", "#003700", "#002966", "#3d1466", 'custom-color'] }],
-        ]
+  const customUploadAdapter = (loader) => {
+    return {
+        upload: () => {
+            return new Promise((resolve, reject) => {
+                const data = new FormData();
+                loader.file.then((file) => {
+                    data.append('image', file); // Match the field name used in your backend
+                    axios.post('http://localhost:3001/upload', data, {
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
+                    })
+                        .then((response) => {
+                            resolve({
+                                default: response.data.imageUrl,
+                            });
+                        })
+                        .catch((error) => {
+                            reject(error);
+                        });
+                });
+            });
+        },
     };
-
-    const formats = [
-        "header", "height", "bold", "italic",
-        "underline", "strike", "blockquote",
-        "list", "color", "bullet", "indent",
-        "link", "image", "align", "size",
-    ];
-
-    const handleProcedureContentChange = (content) => {
-        setContent(content);
-        console.log("content---->", content);
-    };
-
-    useEffect(() => {
-        onContentChange(content);
-    }, [content, onContentChange]);
-
-    return (
-        <div>
-            <div style={{ display: "flex", justifyContent: "center" }}>
-                <ReactQuill
-                    theme="snow"
-                    modules={modules}
-                    formats={formats}
-                    placeholder="Write your content..."
-                    onChange={handleProcedureContentChange}
-                    style={{ height: "150px" }}
-                />
-            </div>
-        </div>
-    );
 };
 
+function uploadPlugin(editor) {
+    editor.plugins.get('FileRepository').createUploadAdapter = (loader) => {
+        return customUploadAdapter(loader);
+    };
+}
+useEffect(() => {
+    onContentChange(editorData);
+  }, [editorData, onContentChange]);
+
+  useEffect(() => {
+    if (reset) {
+      setEditorData(""); // Clear the editor data
+    }
+  }, [reset]);
+
+  return (
+    <div className="text-editor">
+      <CKEditor
+        editor={ClassicEditor}
+        data={editorData}
+        config={{
+          extraPlugins: [uploadPlugin],
+        }}
+        onChange={(event, editor) => {
+          const data = editor.getData();
+          setEditorData(data);
+          console.log(data);
+        }}
+      />
+    </div>
+  );
+};
 TextEditor.propTypes = {
-    onContentChange: PropTypes.func.isRequired,
+  onContentChange: PropTypes.func.isRequired,
+  reset:PropTypes.func.isRequired
 };
 
 export default TextEditor;
