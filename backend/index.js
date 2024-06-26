@@ -55,50 +55,84 @@ app.post('/upload', upload.single('image'), (req, res) => {
   }
 });
 
-// Define a route to handle saving form data
-app.post("/saveFormData", async (req, res) => {
+// // Define a route to handle saving form data
+// app.post("/saveFormData", async (req, res) => {
+//   let connection;
+//   try {
+//     const formData = req.body;
+
+//     // Start a new transaction
+//     connection = await pool.getConnection();
+//     await connection.beginTransaction();
+
+//     // Insert form data into the Form table
+//     const [formResult] = await connection.query(
+//       "INSERT INTO survey_form (title, description) VALUES (?, ?)",
+//       [formData.title, formData.description]
+//     );
+//     const formId = formResult.insertId;
+
+//     // Insert field data into the Field table
+//     await Promise.all(
+//       formData.fields.map(async (fieldData) => {
+//         await connection.query(
+//           "INSERT INTO survey_questions (s_id, type, label, options, required, p_q_id, on_value) VALUES (?, ?, ?, ?, ?, ?, ?)",
+//           [
+//             formId,
+//             fieldData.type,
+//             fieldData.label,
+//             JSON.stringify(fieldData.options),
+//             fieldData.required || false,
+//             fieldData.p_q_id || null,
+//             fieldData.on_value || null,
+//           ]
+//         );
+//       })
+//     );
+
+//     // Commit the transaction
+//     await connection.commit();
+//     connection.release();
+
+//     // Send the formId in the response
+//     res.status(200).json({ formId, message: "Form data saved successfully" });
+//   } catch (error) {
+//     console.error("Error saving form data:", error);
+//     res.status(500).json({ error: "Failed to save form data" });
+
+//     // Rollback the transaction in case of error
+//     if (connection) {
+//       await connection.rollback();
+//       connection.release();
+//     }
+//   }
+// });
+
+app.post("/saveSurvey", async (req, res) => {
   let connection;
   try {
-    const formData = req.body;
+    const { title, description } = req.body;
 
     // Start a new transaction
     connection = await pool.getConnection();
     await connection.beginTransaction();
 
-    // Insert form data into the Form table
+    // Insert the title and description into the survey_form table
     const [formResult] = await connection.query(
       "INSERT INTO survey_form (title, description) VALUES (?, ?)",
-      [formData.title, formData.description]
+      [title, description]
     );
     const formId = formResult.insertId;
-
-    // Insert field data into the Field table
-    await Promise.all(
-      formData.fields.map(async (fieldData) => {
-        await connection.query(
-          "INSERT INTO survey_questions (s_id, type, label, options, required, p_q_id, on_value) VALUES (?, ?, ?, ?, ?, ?, ?)",
-          [
-            formId,
-            fieldData.type,
-            fieldData.label,
-            JSON.stringify(fieldData.options),
-            fieldData.required || false,
-            fieldData.p_q_id || null,
-            fieldData.on_value || null,
-          ]
-        );
-      })
-    );
 
     // Commit the transaction
     await connection.commit();
     connection.release();
 
     // Send the formId in the response
-    res.status(200).json({ formId, message: "Form data saved successfully" });
+    res.status(200).json({ formId, message: "Survey saved successfully" });
   } catch (error) {
-    console.error("Error saving form data:", error);
-    res.status(500).json({ error: "Failed to save form data" });
+    console.error("Error saving survey:", error);
+    res.status(500).json({ error: "Failed to save survey" });
 
     // Rollback the transaction in case of error
     if (connection) {
@@ -109,48 +143,165 @@ app.post("/saveFormData", async (req, res) => {
 });
 
 
-// Define a route to handle saving form data
-app.post("/saveSubQuestion", async (req, res) => {
+// // Define a route to handle saving form data
+// app.post("/saveSubQuestion", async (req, res) => {
+//   let connection;
+//   try {
+//     const subFieldsData = req.body;
+
+//     // Start a new transaction
+//     connection = await pool.getConnection();
+//     await connection.beginTransaction();
+
+//     // Loop through each sub-field data and insert into survey_questions table
+//     await Promise.all(
+//       subFieldsData.map(async (subField) => {
+//         await connection.query(
+//           "INSERT INTO survey_questions (s_id, type, label, options, required, p_q_id, on_value) VALUES (?, ?, ?, ?, ?, ?, ?)",
+//           [
+//             subField.surveyId,
+//             subField.type,
+//             subField.label,
+//             JSON.stringify(subField.options),
+//             subField.required || false,
+//             subField.p_q_id,
+//             subField.on_value,
+//           ]
+//         );
+//       })
+//     );
+
+//     // Commit the transaction
+//     await connection.commit();
+//     connection.release();
+
+//     res.status(200).json({ message: "Sub-questions saved successfully" });
+//   } catch (error) {
+//     console.error("Error saving sub-questions:", error);
+//     res.status(500).json({ error: "Failed to save sub-questions" });
+
+//     // Rollback the transaction in case of error
+//     if (connection) {
+//       await connection.rollback();
+//       connection.release();
+//     }
+//   }
+// });
+
+app.post("/saveQuestion", async (req, res) => {
   let connection;
   try {
-    const subFieldsData = req.body;
+    const questionData = req.body;
 
     // Start a new transaction
     connection = await pool.getConnection();
     await connection.beginTransaction();
 
-    // Loop through each sub-field data and insert into survey_questions table
-    await Promise.all(
-      subFieldsData.map(async (subField) => {
-        await connection.query(
-          "INSERT INTO survey_questions (s_id, type, label, options, required, p_q_id, on_value) VALUES (?, ?, ?, ?, ?, ?, ?)",
-          [
-            subField.surveyId,
-            subField.type,
-            subField.label,
-            JSON.stringify(subField.options),
-            subField.required || false,
-            subField.p_q_id,
-            subField.on_value,
-          ]
-        );
-      })
+    // Insert the question data into the survey_questions table
+    const [questionResult] = await connection.query(
+      "INSERT INTO survey_questions (s_id, type, label, options, required, p_q_id, on_value) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [
+        questionData.s_id,
+        questionData.type,
+        questionData.label,
+        JSON.stringify(questionData.options),
+        questionData.required || false,
+        questionData.p_q_id || null,
+        questionData.on_value || null,
+      ]
     );
+    const questionId = questionResult.insertId;
 
     // Commit the transaction
     await connection.commit();
     connection.release();
 
-    res.status(200).json({ message: "Sub-questions saved successfully" });
+    // Send the questionId in the response
+    res.status(200).json({ questionId, message: "Question saved successfully" });
   } catch (error) {
-    console.error("Error saving sub-questions:", error);
-    res.status(500).json({ error: "Failed to save sub-questions" });
+    console.error("Error saving question:", error);
+    res.status(500).json({ error: "Failed to save question" });
 
     // Rollback the transaction in case of error
     if (connection) {
       await connection.rollback();
       connection.release();
     }
+  }
+});
+
+// Backend: updateQuestion endpoint
+app.put('/updateQuestion/:id', async (req, res) => {
+  try {
+    const questionId = req.params.id;
+    const updatedData = req.body;
+
+    // Validate the updated data here if needed
+
+    // Start a new transaction (optional, depends on your application requirements)
+    const connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    // Update the question in the survey_questions table
+    const [updateResult] = await connection.query(
+      "UPDATE survey_questions SET type = ?, label = ?, options = ?, required = ?, p_q_id = ?, on_value = ? WHERE q_id = ?",
+      [
+        updatedData.type,
+        updatedData.label,
+        JSON.stringify(updatedData.options),
+        updatedData.required || false,
+        updatedData.p_q_id || null,
+        updatedData.on_value || null,
+        questionId
+      ]
+    );
+
+    // Commit the transaction
+    await connection.commit();
+    connection.release();
+
+    // Check if the question was updated successfully
+    if (updateResult.affectedRows > 0) {
+      res.status(200).json({ message: 'Question updated successfully' });
+    } else {
+      res.status(404).json({ message: 'Question not found' });
+    }
+  } catch (error) {
+    console.error('Error updating question:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+});
+
+
+// Backend: deleteQuestion endpoint
+// Backend: deleteQuestion endpoint
+app.delete('/deleteQuestion/:id', async (req, res) => {
+  try {
+    const questionId = req.params.id;
+
+    // Start a new transaction (optional, depends on your application requirements)
+    const connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    // Delete the question from the survey_questions table
+    const [deleteResult] = await connection.query(
+      "DELETE FROM survey_questions WHERE q_id = ?",
+      [questionId]
+    );
+
+    // Commit the transaction
+    await connection.commit();
+    connection.release();
+
+    // Check if the question was deleted successfully
+    if (deleteResult.affectedRows > 0) {
+      res.status(200).json({ message: 'Question deleted successfully' });
+    } else {
+      res.status(404).json({ message: 'Question not found' });
+    }
+  } catch (error) {
+    console.error('Error deleting question:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 });
 

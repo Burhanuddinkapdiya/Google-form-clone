@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Container, Row, Col} from "react-bootstrap";
+import { Button, Container, Row, Col } from "react-bootstrap";
 import { ImParagraphCenter } from "react-icons/im";
 import { IoIosArrowDropdown } from "react-icons/io";
 import { IoIosCheckboxOutline } from "react-icons/io";
@@ -13,11 +13,12 @@ import { IoAdd } from "react-icons/io5";
 import { GoNumber } from "react-icons/go";
 import "./FormComponent.css"; // Import the CSS file
 import TextEditor from "./TextEditor";
-import { useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import parse from "html-react-parser";
 
 const FormComponent = () => {
   const navigate = useNavigate();
-
+  const [formId, setFormId] = useState("");
   const [fields, setFields] = useState([]);
   const [fieldType, setFieldType] = useState("");
   const [fieldLabel, setFieldLabel] = useState("");
@@ -32,6 +33,144 @@ const FormComponent = () => {
   const [fileType, setFileType] = useState("");
   const [fileSize, setFileSize] = useState("");
   const [numberRange, setNumberRange] = useState("");
+  const [parentQuestionId, setParentQuestionId] = useState(null);
+  const [parentOptionValue, setParentOptionValue] = useState("");
+
+
+  const saveSurvey = async () => {
+    try {
+      const formData = {
+        title: formTitle,
+        description: formDescription,
+        // fields: fields.map((field) => {
+        //   return {
+        //     id: field.id,
+        //     type: field.type,
+        //     label: field.label,
+        //     options: field.options,
+        //     p_q_id: field.p_q_id !== undefined ? field.p_q_id : null,
+        //     on_value: field.on_value !== undefined ? field.on_value : null,
+        //   };
+        // }),
+      };
+      console.log(formData);
+
+      if(!formData.title || !formData.description){
+        alert("Please Fill The Following Fields!!");
+        return;
+      }
+
+      
+      const response = await fetch("http://localhost:3001/saveSurvey", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save form data");
+      }
+
+      // Extract formId from the response
+      const responseData = await response.json();
+      setFormId(responseData.formId);
+      setShowInput(true);
+      console.log("Form data saved successfully", formId);
+
+
+    } catch (error) {
+      console.error("Error:", error.message);
+      navigate("/error", {
+        state: { message: "Failed to save the form. Please try again later." },
+      });
+    }
+  };
+
+  const saveSingleQuestion = async (question) => {
+    try {
+      const response = await fetch("http://localhost:3001/saveQuestion", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(question),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save question");
+      }
+
+      const responseData = await response.json();
+      question.id = responseData.questionId;
+
+      setFields((prevFields) => [
+        ...prevFields.filter((field) => field.id !== editingFieldId),
+        question,
+      ]);
+      setFieldCounter((prevCounter) => prevCounter + 1);
+
+      console.log("Question saved successfully", question);
+    } catch (error) {
+      console.error("Error:", error.message);
+      navigate("/error", {
+        state: { message: "Failed to save the question. Please try again later." },
+      });
+    }
+  };
+  const updateQuestion = async (questionId, updatedData) => {
+    try {
+      const response = await fetch(`http://localhost:3001/updateQuestion/${questionId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update question");
+      }
+
+      const updatedFields = fields.map((field) => (field.id === questionId ? updatedData : field));
+      setFields(updatedFields);
+
+      console.log("Question updated successfully", updatedData);
+    } catch (error) {
+      console.error("Error:", error.message);
+      navigate("/error", {
+        state: { message: "Failed to update the question. Please try again later." },
+      });
+    }
+  };
+
+  const deleteQuestion = async (id) => {
+    try {
+      const response = await fetch(`http://localhost:3001/deleteQuestion/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete question");
+      }
+
+      setFields(fields.filter((field) => field.id !== id));
+      console.log("Question deleted successfully", id);
+    } catch (error) {
+      console.error("Error:", error.message);
+      navigate("/error", {
+        state: { message: "Failed to delete the question. Please try again later." },
+      });
+    }
+  };
+
+
+  const handleAddSubQuestion = (id, option) => {
+    setParentQuestionId(id);
+    setParentOptionValue(option);
+    setShowInput(true);
+  };
 
   const handleFileTypeChange = (type) => {
     setFileType(type);
@@ -68,38 +207,34 @@ const FormComponent = () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+ 
+
+  const handleDeleteField = (id) => {
+    deleteQuestion(id); // Call the deleteQuestion function to delete the question from the server
+  };
 
   const handleAddField = () => {
-    if (
-      fieldType === "paragraph" ||
-      fieldType === "date" ||
-      fieldType === "file" ||
-      fieldType === "number"
-    ) {
+    if (fieldType === "paragraph" || fieldType === "date" || fieldType === "file" || fieldType === "number") {
       if (fieldType === "number" && !numberRange) {
         return;
       }
       const newField = {
+        s_id: formId,
         id: editingFieldId !== null ? editingFieldId : fieldCounter,
         type: fieldType,
         label: fieldLabel,
-        options:
-          fieldType === "number"
-            ? [numberRange]
-            : [...fieldOptions.filter((option) => option.trim() !== "")],
-        serialNo:
-          editingFieldId !== null
-            ? fields.find((field) => field.id === editingFieldId).serialNo
-            : fieldCounter, // Preserve the original serialNo if editing an existing field
-        p_q_id: null, // Default to null for parent fields
-        on_value: null // Default to null for parent fields
+        options: fieldType === "number" ? [numberRange] : [...fieldOptions.filter((option) => option.trim() !== "")],
+        p_q_id: parentQuestionId || null, // Default to null for parent fields
+        on_value: parentOptionValue || null, // Default to null for parent fields
       };
-  
-      setFields((prevFields) => [
-        ...prevFields.filter((field) => field.id !== editingFieldId),
-        newField,
-      ]);
-      setFieldCounter(fieldCounter + 1);
+
+      if (editingFieldId !== null) {
+
+        updateQuestion(editingFieldId, newField); // Pass editingFieldId to updateQuestion function
+      } else {
+        saveSingleQuestion(newField); // Call the saveSingleQuestion function to save a new question
+      }
+
       setFieldType("");
       setFieldLabel("");
       setFieldOptions([]);
@@ -107,37 +242,36 @@ const FormComponent = () => {
       setOptionError(false);
       setEditingFieldId(null);
       setNumberRange("");
-    } else if (
-      fieldOptions.length === 0 ||
-      fieldOptions.some((option) => option.trim() === "")
-    ) {
+      setParentQuestionId(null);
+      setParentOptionValue("");
+    } else if (fieldOptions.length === 0 || fieldOptions.some((option) => option.trim() === "")) {
       setOptionError(true);
       return; // Exit the function early if options are not present or contain empty options
     } else {
       const newField = {
+        s_id: formId,
         id: editingFieldId !== null ? editingFieldId : fieldCounter,
         type: fieldType,
         label: fieldLabel,
         options: [...fieldOptions],
-        serialNo:
-          editingFieldId !== null
-            ? fields.find((field) => field.id === editingFieldId).serialNo
-            : fieldCounter,
-        p_q_id: null, // Default to null for parent fields
-        on_value: null // Default to null for parent fields
+        p_q_id: parentQuestionId || null, // Default to null for parent fields
+        on_value: parentOptionValue || null, // Default to null for parent fields
       };
-  
-      setFields((prevFields) => [
-        ...prevFields.filter((field) => field.id !== editingFieldId),
-        newField,
-      ]);
-      setFieldCounter(fieldCounter + 1);
+
+      if (editingFieldId !== null) {
+        updateQuestion(editingFieldId, newField); // Pass editingFieldId to updateQuestion function
+      } else {
+        saveSingleQuestion(newField); // Call the saveSingleQuestion function to save a new question
+      }
+
       setFieldType("");
       setFieldLabel("");
       setFieldOptions([]);
       setShowInput(!showInput);
       setOptionError(false);
       setEditingFieldId(null);
+      setParentOptionValue("");
+      setParentQuestionId("");
     }
   };
   
@@ -155,262 +289,181 @@ const FormComponent = () => {
     newOptions[index] = value;
     setFieldOptions(newOptions);
   };
-  // const handleDeleteOption = (fieldId, optionIndex) => {
-  //   const updatedFields = fields.map((field) => {
-  //     if (field.id === fieldId) {
-  //       const updatedOptions = [...field.options];
-  //       updatedOptions.splice(optionIndex, 1);
-  //       return { ...field, options: updatedOptions };
-  //     }
-  //     return field;
-  //   });
-  //   setFields(updatedFields);
-  // };
 
-  const handleDeleteField = (id) => {
-    setFields(fields.filter((field) => field.id !== id));
-  };
 
   const handleDuplicateField = (id) => {
     const fieldToDuplicate = fields.find((field) => field.id === id);
     const duplicatedField = { ...fieldToDuplicate, id: fieldCounter };
-    setFields([...fields, duplicatedField]);
+    saveSingleQuestion(duplicatedField);
     setFieldCounter(fieldCounter + 1);
   };
 
-  const handleToggleRequired = (id) => {
+  const handleToggleRequired = async (id) => {
     const updatedFields = fields.map((field) => {
       if (field.id === id) {
         return { ...field, required: !field.required };
       }
       return field;
     });
+  
+    const updatedField = updatedFields.find((field) => field.id === id);
+    if (updatedField) {
+      await updateQuestion(id, updatedField);
+    }
     setFields(updatedFields);
   };
+  
   const handleEditOptions = (fieldId) => {
     setEditingFieldId(fieldId);
     const field = fields.find((field) => field.id === fieldId);
     setFieldLabel(field.label);
     setFieldType(field.type);
     setFieldOptions([...field.options]);
+    setParentOptionValue(field.on_value);
+    setParentQuestionId(field.p_q_id);
     setShowInput(true);
   };
+  
 
-  const sendDataToServer = async () => {
-    try {
-      // Create an object to hold form information including title, description, and fields
-      const formData = {
-        title: formTitle,
-        description: formDescription,
-        fields: fields.map((field) => {
-          return {
-            id: field.id,
-            type: field.type,
-            label: field.label,
-            options: field.options,
-            serialNo: field.serialNo,
-            p_q_id: field.p_q_id !== undefined ? field.p_q_id : null,
-            on_value: field.on_value !== undefined ? field.on_value : null,
-          };
-        }),
-      };
-      console.log(formData);
-  
-      // Send the formData to the server
-      const response = await fetch("http://localhost:3001/saveFormData", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to save form data");
-      }
-  
-      // Extract formId from the response
-      const responseData = await response.json();
-      const formId = responseData.formId; // Get formId from response
-      console.log("Form data saved successfully", formId);
-  
-      // Reset the form data
-      setFields([]);
-      setFieldType("");
-      setFieldLabel("");
-      setFieldOptions([]);
-      setFieldCounter(0);
-      setShowInput(false);
-      setOptionError(false);
-      setEditingFieldId(null);
-      setFormTitle("");
-      setFormDescription("");
-      setNumberRange("");
-  
-      // Navigate to the success page with the formId
-      navigate("/success", {
-        state: { message: "Form Created Successfully!", formId: formId }
-      });
-  
-      return formId; // Return formId
-  
-    } catch (error) {
-      console.error("Error:", error.message);
-      navigate("/error", {
-        state: { message: "Failed to save the form. Please try again later." },
-      });
-    }
-  };
-  
-  const handleAddSubQuestionProceed = async () => {
-    try {
-      const formId = await sendDataToServer(); // Call sendDataToServer to save form data and get formId
-      if (formId) {
-        // Navigate to the formId route if formId is available
-        navigate(`/${formId}`);
-      }
-    } catch (error) {
-      navigate('/error',{
-        state:{message:"An error occured!!"}
-      })
-    }
-  };
+  console.log(fields);
+
 
   const renderField = (field) => {
     // const subQuestions = fields.filter((subField) => subField.p_q_id === field.id);
     return (
       <>
-      <div className="box" key={field.id} style={{ order: field.id }}>
-        <h4>{field.label}</h4>
-        {field.type === "paragraph" && (
-          <textarea
-            className="custom-input"
-            type="text"
-            placeholder="Paragraph"
-            disabled
-          />
-        )}
-        {field.type === "multipleChoice" && (
-          <div>
-            {field.options.map((option, optionIndex) => (
-              <div className="options" key={optionIndex}>
-                <input
-                  type="radio"
-                  name={`option_${field.id}`}
-                  value={option}
-                  disabled
-                />
-              <label style={{width:"5rem"}}> {option} </label>
-              </div>
-            ))}
-          </div>
-        )}
-        {field.type === "dropdown" && (
-          <select className="custom-select">
-            {field.options.map((option, optionIndex) => (
-              <option key={optionIndex} disabled>
-                {option}
-              </option>
-            ))}
-          </select>
-        )}
-        {field.type === "checkbox" && (
-          <div>
-            {field.options.map((option, optionIndex) => (
-              <div className="options" key={optionIndex}>
-                <input
-                  className="custom-checkbox"
-                  type="checkbox"
-                  id={`option_${optionIndex}`}
-                  name={`option_${field.id}`}
-                  value={option}
-                  disabled
-                />
-                <label htmlFor={`option_${optionIndex}`}>{option}</label>
-                {/* <Button
+        <div className="box" key={field.id} style={{ order: field.id }}>
+          <h4>{field.label}</h4>
+          {field.type === "paragraph" && (
+            <textarea
+              className="custom-input"
+              type="text"
+              placeholder="Paragraph"
+              disabled
+            />
+          )}
+          {field.type === "multipleChoice" && (
+            <div>
+              {field.options.map((option, optionIndex) => (
+                <div className="options" key={optionIndex}>
+                  <input
+                    type="radio"
+                    name={`option_${field.id}`}
+                    value={option}
+                    disabled
+                  />
+                  <label style={{ width: "5rem" }}> {option} </label>
+                  <Button
+                  className="btn-primary"
+                  size="sm"
+                  onClick={() => handleAddSubQuestion(field.id, option)}
+                >
+                  Add Sub Question
+                </Button>
+                </div>
+              ))}
+            </div>
+          )}
+          {field.type === "dropdown" && (
+            <select className="custom-select">
+              {field.options.map((option, optionIndex) => (
+                <option key={optionIndex} disabled>
+                  {option}
+                </option>
+              ))}
+            </select>
+          )}
+          {field.type === "checkbox" && (
+            <div>
+              {field.options.map((option, optionIndex) => (
+                <div className="options" key={optionIndex}>
+                  <input
+                    className="custom-checkbox"
+                    type="checkbox"
+                    id={`option_${optionIndex}`}
+                    name={`option_${field.id}`}
+                    value={option}
+                    disabled
+                  />
+                  <label htmlFor={`option_${optionIndex}`}>{option}</label>
+                  {/* <Button
                   className="btn-close btn-outline-light"
                   size="sm"
                   onClick={() => handleDeleteOption(field.id, optionIndex)}
                 ></Button> */}
-              </div>
-            ))}
-          </div>
-        )}
-        {field.type === "date" && (
-          <input className="custom-input" type="date" disabled />
-        )}
-        {/* {field.type === "time" && (
-          <input className="custom-input" type="time" disabled />
-        )} */}
-        {field.type === "file" && (
-          <input className="custom-input" type="file" disabled />
-        )}
-        {field.type === "number" && (
-          <div>
-            <input
-              className="custom-input"
-              type="number"
-              placeholder="Number"
-              disabled
-            />
-            <span className="number-field">
-              Range: {field.options[field.options.length - 1]}
-            </span>
-          </div>
-        )}
-        
+                </div>
+              ))}
+            </div>
+          )}
+          {field.type === "date" && (
+            <input className="custom-input" type="date" disabled />
+          )}
+          {field.type === "file" && (
+            <input className="custom-input" type="file" disabled />
+          )}
+          {field.type === "number" && (
+            <div>
+              <input
+                className="custom-input"
+                type="number"
+                placeholder="Number"
+                disabled
+              />
+              <span className="number-field">
+                Range: {field.options[field.options.length - 1]}
+              </span>
+            </div>
+          )}
 
-        <div className="footer">
-          <Button
-            title="Delete"
-            className="btn-delete"
-            size="sm"
-            onClick={() => handleDeleteField(field.id)}
-          >
-            <MdDeleteOutline size={isMobile ? 20 : 30} />
-          </Button>
-          <Button
-            title="Edit"
-            className="btn-edit"
-            size="sm"
-            onClick={() => handleEditOptions(field.id)}
-          >
-            <FaRegEdit size={isMobile ? 15 : 25} />
-          </Button>
-          <Button
-            title="Copy"
-            className="btn-copy"
-            size="sm"
-            onClick={() => handleDuplicateField(field.id)}
-          >
-            <FaRegCopy size={isMobile ? 15 : 25} />
-          </Button>
-          <div className="form-check form-switch">
-            <label
-              className="form-check-label"
-              htmlFor={`required_${field.id}`}
+          <div className="footer">
+            <Button
+              title="Delete"
+              className="btn-delete"
+              size="sm"
+              onClick={() => handleDeleteField(field.id)}
             >
-              Required
-            </label>
-            <input
-              className="form-check-input"
-              type="checkbox"
-              id={`required_${field.id}`}
-              checked={field.required || false}
-              onChange={() => handleToggleRequired(field.id)}
-            />
+              <MdDeleteOutline size={isMobile ? 20 : 30} />
+            </Button>
+            <Button
+              title="Edit"
+              className="btn-edit"
+              size="sm"
+              onClick={() => handleEditOptions(field.id)}
+            >
+              <FaRegEdit size={isMobile ? 15 : 25} />
+            </Button>
+            <Button
+              title="Copy"
+              className="btn-copy"
+              size="sm"
+              onClick={() => handleDuplicateField(field.id)}
+            >
+              <FaRegCopy size={isMobile ? 15 : 25} />
+            </Button>
+            <div className="form-check form-switch">
+              <label
+                className="form-check-label"
+                htmlFor={`required_${field.id}`}
+              >
+                Required
+              </label>
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id={`required_${field.id}`}
+                checked={field.required || false}
+                onChange={() => handleToggleRequired(field.id)}
+              />
+            </div>
           </div>
         </div>
-      
-      </div>
-        </>
-      
+      </>
     );
   };
   return (
     <Container className="form-container">
       <Row>
-        <Col>
+        <Col>{!formId ? <>
           <div className="box-top">
             <input
               value={formTitle}
@@ -427,7 +480,19 @@ const FormComponent = () => {
                 onContentChange={(content) => setFormDescription(content)}
               />
             </div>
+           
           </div>
+          <Button
+              className="save-button d-flex m-auto my-3"
+              variant="primary"
+              onClick={saveSurvey}
+            >
+              Add Questions
+            </Button></> : <div className="box-top">
+                <h1>{formTitle}</h1>
+                <div className="description">{parse(formDescription)}</div>
+              </div> }
+            
           {fields.map((field) => renderField(field))}
           {showInput && (
             <div className="box">
@@ -634,35 +699,37 @@ const FormComponent = () => {
                     onChange={handleRangeChange}
                     min="1"
                   />
-                 {numberRange === "" && <p className="error-msg">Range is required</p>} {/* Add this line */}
+                  {numberRange === "" && (
+                    <p className="error-msg">Range is required</p>
+                  )}{" "}
+                  {/* Add this line */}
                 </div>
-  
               )}
             </div>
           )}
           <div className="add-btn-container">
-            <Button
+            {formId && <Button
               className="add-btn"
               onClick={() => setShowInput(!showInput)}
             >
               <IoAdd size={isMobile ? 20 : 25} />
-            </Button>
+            </Button>}
           </div>
           <div className="save-btn-container">
-            <Button
+            {/* <Button
               className="save-button"
               variant="primary"
               onClick={sendDataToServer}
             >
               Save Form
-            </Button>
-            <Button
+            </Button> */}
+            {/* <Button
               className="save-button"
               variant="primary"
               onClick={handleAddSubQuestionProceed}
             >
-            Add Sub Questions
-            </Button>
+              Add Sub Questions
+            </Button> */}
           </div>
         </Col>
       </Row>

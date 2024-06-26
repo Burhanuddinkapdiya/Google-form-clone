@@ -6,7 +6,7 @@ import "./TextEditor.css";
 import { PropTypes } from "prop-types";
 import axios from 'axios'
 
-const TextEditor = ({ onContentChange, reset }) => {
+const TextEditor = ({ onContentChange}) => {
   const [editorData, setEditorData] = useState("");
 
   const customUploadAdapter = (loader) => {
@@ -44,11 +44,7 @@ useEffect(() => {
     onContentChange(editorData);
   }, [editorData, onContentChange]);
 
-  useEffect(() => {
-    if (reset) {
-      setEditorData(""); // Clear the editor data
-    }
-  }, [reset]);
+
 
   return (
     <div className="text-editor">
@@ -68,8 +64,7 @@ useEffect(() => {
   );
 };
 TextEditor.propTypes = {
-  onContentChange: PropTypes.func.isRequired,
-  reset:PropTypes.func.isRequired
+  onContentChange: PropTypes.func.isRequired
 };
 
 export default TextEditor;

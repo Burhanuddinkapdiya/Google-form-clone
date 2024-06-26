@@ -125,7 +125,7 @@ const SubmitForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     // Validate required fields
     const newFieldErrors = {};
     fields.forEach((field) => {
@@ -140,32 +140,35 @@ const SubmitForm = () => {
         newFieldErrors[field.id] = `Number must be exactly ${maxValue.toString().length}`;
       }
     });
-
+  
     setFieldErrors(newFieldErrors);
-
+  
     // If any required field is empty or only whitespace, prevent form submission
     if (Object.values(newFieldErrors).some((error) => error)) {
       return;
     }
-
+  
     const formDataToSend = new FormData();
     formDataToSend.append("surveyId", formId);
     formDataToSend.append("itsId", itsId);
-
+  
+    // Filter form data to include only selected answers
     Object.entries(formData).forEach(([key, value]) => {
-      formDataToSend.append(key, value);
+      if (value) {
+        formDataToSend.append(key, value);
+      }
     });
-
+  
     try {
       const response = await fetch("http://localhost:3001/submitFormData", {
         method: "POST",
         body: formDataToSend,
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to save survey answer data");
       }
-
+  
       console.log("Survey answer data saved successfully");
       setFormData({});
       navigate("/success", {
@@ -176,6 +179,7 @@ const SubmitForm = () => {
       navigate("/error", { state: { message: "Failed to submit form data." } });
     }
   };
+  
 
   // Calculate max value for number fields
   useEffect(() => {
@@ -220,7 +224,7 @@ const SubmitForm = () => {
               required={field.required}
             />
           )}
-
+  
           {field.type === "multipleChoice" && (
             <div>
               {field.options.map((option, optionIndex) => (
@@ -235,6 +239,7 @@ const SubmitForm = () => {
                     required={field.required}
                   />
                   {option}
+                  {renderChildFields(field.id, option)} {/* Recursive call */}
                 </div>
               ))}
             </div>
@@ -263,12 +268,11 @@ const SubmitForm = () => {
                     id={`option_${optionIndex}`}
                     name={`option_${field.id}`}
                     value={option}
-                    onChange={(e) =>
-                      handleInputChange(field.id, e.target.value)
-                    }
+                    onChange={(e) => handleInputChange(field.id, e.target.value)}
                     required={field.required}
                   />
                   <label htmlFor={`option_${optionIndex}`}>{option}</label>
+                  {renderChildFields(field.id, option)} {/* Recursive call */}
                 </div>
               ))}
             </div>
@@ -317,6 +321,7 @@ const SubmitForm = () => {
         </div>
       ));
   };
+  
 
   return (
     <Container>

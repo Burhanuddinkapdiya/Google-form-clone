@@ -1,0 +1,32 @@
+/* Add this CSS to your stylesheet */
+
+.box .sub-questions {
+    margin: 10px 0;
+    padding-left: 20px;
+  }
+  
+  .box .sub-questions .box {
+    background-color: #f9f9f9;
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-top: 10px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 90%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .box .sub-questions .box h4 {
+    font-size: 0.9rem;
+  }
+  
+  .box .sub-questions .options {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .box .sub-questions .options input {
+    transform: scale(0.8);
+  }
+  

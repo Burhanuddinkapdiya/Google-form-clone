@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Container, Row, Col, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./SubmitForm.css";
+import "./AddSubQuestion.css";
 import parse from "html-react-parser";
 import { ImParagraphCenter } from "react-icons/im";
 import { RiCheckboxMultipleBlankLine } from "react-icons/ri";
@@ -27,21 +28,16 @@ const AddSubQuestion = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 600);
   const [optionError, setOptionError] = useState(false);
   const [numberRange, setNumberRange] = useState("");
-  const [counter, setCounter] = useState(1); // Initialize counter state
-
-  const handleRangeChange = (e) => {
-    setNumberRange(e.target.value);
-  };
+  const [counter, setCounter] = useState(1);
+  const [subQuestions, setSubQuestions] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 600);
     };
 
-    // Add event listener to window resize
     window.addEventListener("resize", handleResize);
 
-    // Remove event listener on component unmount
     return () => {
       window.removeEventListener("resize", handleResize);
     };
@@ -55,7 +51,7 @@ const AddSubQuestion = () => {
 
   const handleSaveSubQuestion = () => {
     const newSubField = {
-      id: counter, // Assign unique ID using counter
+      id: counter,
       label: subFieldLabel,
       type: subFieldType,
       options: subFieldOptions,
@@ -63,15 +59,16 @@ const AddSubQuestion = () => {
       p_q_id: currentFieldId,
       on_value: currentOptionValue,
     };
-
+  
     setSubFields([...subFields, newSubField]);
-    setCounter(counter + 1); // Increment counter
+    setCounter(counter + 1);
     setShowInput(false);
     setSubFieldLabel("");
     setSubFieldType("paragraph");
     setSubFieldOptions([]);
     setOptionError(false);
   };
+  
 
   const handleSendDataToServer = async () => {
     try {
@@ -93,12 +90,41 @@ const AddSubQuestion = () => {
       setFields([]);
       setSurveyTitle("");
       setSurveyDescription("");
-      navigate("/success",{
-        state:{message:"Sub Question Added Successfully!"}
+      navigate("/success", {
+        state: { message: "Sub Question Added Successfully!" },
       });
     } catch (error) {
       console.error("Error saving subfields:", error.message);
-      navigate("/error",{
+      navigate("/error", {
+        state: { message: "Failed to save the form. Please try again later." },
+      });
+    }
+  };
+
+  const handleSubQuestion = async () => {
+    try {
+      const response = await fetch(`http://localhost:3001/saveSubQuestion`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(subFields),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save subfields");
+      }
+
+      const result = await response.json();
+      console.log("Sub-fields saved successfully:", result);
+      setSubFields([]);
+      setFields([]);
+      setSurveyTitle("");
+      setSurveyDescription("");
+      setSubQuestions(true);
+    } catch (error) {
+      console.error("Error saving subfields:", error.message);
+      navigate("/error", {
         state: { message: "Failed to save the form. Please try again later." },
       });
     }
@@ -124,12 +150,19 @@ const AddSubQuestion = () => {
     if (formId) {
       const fetchFormData = async () => {
         try {
-          const response = await fetch(`http://localhost:3001/formData/${formId}`);
+          const response = await fetch(
+            `http://localhost:3001/formData/${formId}`
+          );
           if (!response.ok) {
             throw new Error("Failed to fetch form fields");
           }
           const formData = await response.json();
-          const multipleChoiceFields = formData.fields.filter((field) => field.type === "multipleChoice");
+          const multipleChoiceFields = !subQuestions
+            ? formData.fields.filter((field) => field.type === "multipleChoice")
+            : formData.fields.filter(
+                (field) => field.type === "multipleChoice" && field.p_q_id
+              );
+
           setFields(multipleChoiceFields);
           setSurveyTitle(formData.title);
           setSurveyDescription(formData.description);
@@ -140,13 +173,18 @@ const AddSubQuestion = () => {
 
       fetchFormData();
     }
-  }, [formId]);
+  }, [formId, subQuestions]);
 
   const handleDeleteField = (id) => {
     setSubFields(subFields.filter((field) => field.id !== id));
   };
+  const handleRangeChange = (e) => {
+    setNumberRange(e.target.value);
+  };
 
   const renderField = (field) => {
+    const subQuestions = subFields.filter(subField => subField.p_q_id === field.id);
+  
     return (
       <div className="box" key={field.id} style={{ order: field.id }}>
         <h4>{field.label}</h4>
@@ -169,6 +207,13 @@ const AddSubQuestion = () => {
                   disabled
                 />
                 <label style={{ width: "5rem" }}> {option} </label>
+                <Button
+                  className="btn-primary"
+                  size="sm"
+                  onClick={() => handleAddSubQuestion(field.id, option)}
+                >
+                  Add Sub Question
+                </Button>
               </div>
             ))}
           </div>
@@ -215,7 +260,14 @@ const AddSubQuestion = () => {
             </span>
           </div>
         )}
-
+  
+        {/* Render sub-questions recursively */}
+        {subQuestions.length > 0 && (
+          <div className="sub-questions">
+            {subQuestions.map(subQuestion => renderField(subQuestion))}
+          </div>
+        )}
+  
         <div className="footer">
           <Button
             title="Delete"
@@ -229,6 +281,7 @@ const AddSubQuestion = () => {
       </div>
     );
   };
+  
 
   return (
     <Container>
@@ -238,38 +291,13 @@ const AddSubQuestion = () => {
             <h1>{surveyTitle}</h1>
             <div className="description">{parse(surveyDescription)}</div>
           </div>
-          {fields.map((field) => (
-            <div className="box" key={field.id}>
-              <h3>{field.label}</h3>
-              <div>
-                {field.options.map((option, optionIndex) => (
-                  <div className="options" key={optionIndex}>
-                    <input
-                      type="radio"
-                      name={`option_${field.id}`}
-                      value={option}
-                      required={field.required}
-                      disabled
-                    />
-                    <label style={{ width: "60%" }}>{option}</label>
-                    <Button
-                      className="btn-primary"
-                      size="sm"
-                      onClick={() => handleAddSubQuestion(field.id, option)}
-                    >
-                      Add Sub Question
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-          {subFields.map((field) => renderField(field))}
+          {fields.map((field) => renderField(field))}
+          {subFields.map((field) => !field.p_q_id && renderField(field))}
           {showInput && (
             <div className="box">
               <div className="btn-close-top">
                 <Button
-                  className="btn-close btn-outline-light "
+                  className="btn-close btn-outline-light"
                   size="sm"
                   onClick={() => setShowInput(!showInput)}
                 ></Button>
@@ -310,7 +338,9 @@ const AddSubQuestion = () => {
                   <Button
                     className="field-btn"
                     variant={
-                      subFieldType === "dropdown" ? "primary" : "outline-secondary"
+                      subFieldType === "dropdown"
+                        ? "primary"
+                        : "outline-secondary"
                     }
                     onClick={() => setSubFieldType("dropdown")}
                   >
@@ -321,7 +351,9 @@ const AddSubQuestion = () => {
                   <Button
                     className="field-btn"
                     variant={
-                      subFieldType === "checkbox" ? "primary" : "outline-secondary"
+                      subFieldType === "checkbox"
+                        ? "primary"
+                        : "outline-secondary"
                     }
                     onClick={() => setSubFieldType("checkbox")}
                   >
@@ -351,7 +383,9 @@ const AddSubQuestion = () => {
                   <Button
                     className="field-btn"
                     variant={
-                      subFieldType === "number" ? "primary" : "outline-secondary"
+                      subFieldType === "number"
+                        ? "primary"
+                        : "outline-secondary"
                     }
                     onClick={() => setSubFieldType("number")}
                   >
@@ -396,7 +430,8 @@ const AddSubQuestion = () => {
                   )}
                 </div>
               )}
-              {(subFieldType === "dropdown" || subFieldType === "checkbox") && (
+              {(subFieldType === "dropdown" ||
+                subFieldType === "checkbox") && (
                 <div className="field-options">
                   {subFieldOptions.map((option, index) => (
                     <div key={index} className="option-container">
@@ -439,15 +474,36 @@ const AddSubQuestion = () => {
               )}
             </div>
           )}
-          <div className="submit-button">
-            <Button type="submit" size="sm" variant="primary" onClick={handleSendDataToServer}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              margin: "20px",
+              gap: "3rem",
+            }}
+          >
+            <Button
+              type="submit"
+              size="sm"
+              variant="primary"
+              onClick={handleSendDataToServer}
+            >
               Submit
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              variant="primary"
+              onClick={handleSubQuestion}
+            >
+              Add Sub Question
             </Button>
           </div>
         </Col>
       </Row>
     </Container>
   );
+
 };
 
 export default AddSubQuestion;
