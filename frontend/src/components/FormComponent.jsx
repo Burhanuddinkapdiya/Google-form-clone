@@ -329,137 +329,138 @@ const FormComponent = () => {
 
 
   const renderField = (field) => {
-    // const subQuestions = fields.filter((subField) => subField.p_q_id === field.id);
+    const subQuestions = fields.filter((subField) => subField.p_q_id === field.id);
     return (
-      <>
-        <div className="box" key={field.id} style={{ order: field.id }}>
-          <h4>{field.label}</h4>
-          {field.type === "paragraph" && (
-            <textarea
-              className="custom-input"
-              type="text"
-              placeholder="Paragraph"
-              disabled
-            />
-          )}
-          {field.type === "multipleChoice" && (
-            <div>
-              {field.options.map((option, optionIndex) => (
-                <div className="options" key={optionIndex}>
-                  <input
-                    type="radio"
-                    name={`option_${field.id}`}
-                    value={option}
-                    disabled
-                  />
-                  <label style={{ width: "5rem" }}> {option} </label>
-                  <Button
+      <div className={!field.p_q_id ? "box" : "subQuestion"} key={field.id} style={{ order: field.id }}>
+        <h4>{field.label}</h4>
+        {field.type === "paragraph" && (
+          <textarea
+            className="custom-input"
+            type="text"
+            placeholder="Paragraph"
+            disabled
+          />
+        )}
+        {field.type === "multipleChoice" && (
+          <div>
+            {field.options.map((option, optionIndex) => (
+              <div className="options" key={optionIndex}>
+                <input
+                  type="radio"
+                  name={`option_${field.id}`}
+                  value={option}
+                  disabled
+                />
+                <label style={{ width: "5rem" }}> {option} </label>
+                <Button
                   className="btn-primary"
                   size="sm"
                   onClick={() => handleAddSubQuestion(field.id, option)}
                 >
                   Add Sub Question
                 </Button>
-                </div>
-              ))}
-            </div>
-          )}
-          {field.type === "dropdown" && (
-            <select className="custom-select">
-              {field.options.map((option, optionIndex) => (
-                <option key={optionIndex} disabled>
-                  {option}
-                </option>
-              ))}
-            </select>
-          )}
-          {field.type === "checkbox" && (
-            <div>
-              {field.options.map((option, optionIndex) => (
-                <div className="options" key={optionIndex}>
-                  <input
-                    className="custom-checkbox"
-                    type="checkbox"
-                    id={`option_${optionIndex}`}
-                    name={`option_${field.id}`}
-                    value={option}
-                    disabled
-                  />
-                  <label htmlFor={`option_${optionIndex}`}>{option}</label>
-                  {/* <Button
-                  className="btn-close btn-outline-light"
-                  size="sm"
-                  onClick={() => handleDeleteOption(field.id, optionIndex)}
-                ></Button> */}
-                </div>
-              ))}
-            </div>
-          )}
-          {field.type === "date" && (
-            <input className="custom-input" type="date" disabled />
-          )}
-          {field.type === "file" && (
-            <input className="custom-input" type="file" disabled />
-          )}
-          {field.type === "number" && (
-            <div>
-              <input
-                className="custom-input"
-                type="number"
-                placeholder="Number"
-                disabled
-              />
-              <span className="number-field">
-                Range: {field.options[field.options.length - 1]}
-              </span>
-            </div>
-          )}
-
-          <div className="footer">
-            <Button
-              title="Delete"
-              className="btn-delete"
-              size="sm"
-              onClick={() => handleDeleteField(field.id)}
+              </div>
+            ))}
+          </div>
+        )}
+        {field.type === "dropdown" && (
+          <select className="custom-select">
+            {field.options.map((option, optionIndex) => (
+              <option key={optionIndex} disabled>
+                {option}
+              </option>
+            ))}
+          </select>
+        )}
+        {field.type === "checkbox" && (
+          <div>
+            {field.options.map((option, optionIndex) => (
+              <div className="options" key={optionIndex}>
+                <input
+                  className="custom-checkbox"
+                  type="checkbox"
+                  id={`option_${optionIndex}`}
+                  name={`option_${field.id}`}
+                  value={option}
+                  disabled
+                />
+                <label htmlFor={`option_${optionIndex}`}>{option}</label>
+              </div>
+            ))}
+          </div>
+        )}
+        {field.type === "date" && (
+          <input className="custom-input" type="date" disabled />
+        )}
+        {field.type === "file" && (
+          <input className="custom-input" type="file" disabled />
+        )}
+        {field.type === "number" && (
+          <div>
+            <input
+              className="custom-input"
+              type="number"
+              placeholder="Number"
+              disabled
+            />
+            <span className="number-field">
+              Range: {field.options[field.options.length - 1]}
+            </span>
+          </div>
+        )}
+        <div className="footer">
+          <Button
+            title="Delete"
+            className="btn-delete"
+            size="sm"
+            onClick={() => handleDeleteField(field.id)}
+          >
+            <MdDeleteOutline size={isMobile ? 20 : 30} />
+          </Button>
+          <Button
+            title="Edit"
+            className="btn-edit"
+            size="sm"
+            onClick={() => handleEditOptions(field.id)}
+          >
+            <FaRegEdit size={isMobile ? 15 : 25} />
+          </Button>
+          <Button
+            title="Copy"
+            className="btn-copy"
+            size="sm"
+            onClick={() => handleDuplicateField(field.id)}
+          >
+            <FaRegCopy size={isMobile ? 15 : 25} />
+          </Button>
+          <div className="form-check form-switch">
+            <label
+              className="form-check-label"
+              htmlFor={`required_${field.id}`}
             >
-              <MdDeleteOutline size={isMobile ? 20 : 30} />
-            </Button>
-            <Button
-              title="Edit"
-              className="btn-edit"
-              size="sm"
-              onClick={() => handleEditOptions(field.id)}
-            >
-              <FaRegEdit size={isMobile ? 15 : 25} />
-            </Button>
-            <Button
-              title="Copy"
-              className="btn-copy"
-              size="sm"
-              onClick={() => handleDuplicateField(field.id)}
-            >
-              <FaRegCopy size={isMobile ? 15 : 25} />
-            </Button>
-            <div className="form-check form-switch">
-              <label
-                className="form-check-label"
-                htmlFor={`required_${field.id}`}
-              >
-                Required
-              </label>
-              <input
-                className="form-check-input"
-                type="checkbox"
-                id={`required_${field.id}`}
-                checked={field.required || false}
-                onChange={() => handleToggleRequired(field.id)}
-              />
-            </div>
+              Required
+            </label>
+            <input
+              className="form-check-input"
+              type="checkbox"
+              id={`required_${field.id}`}
+              checked={field.required || false}
+              onChange={() => handleToggleRequired(field.id)}
+            />
           </div>
         </div>
-      </>
+        {subQuestions.map((subField) =><div
+          key={subField.id}
+        >
+          {renderField(subField)}
+        </div>)}
+      </div>
     );
   };
+  
+  
+  
+  
   return (
     <Container className="form-container">
       <Row>
@@ -493,7 +494,10 @@ const FormComponent = () => {
                 <div className="description">{parse(formDescription)}</div>
               </div> }
             
-          {fields.map((field) => renderField(field))}
+           {fields
+      .filter((field) => !field.p_q_id)
+      .map((field) => renderField(field))
+  }
           {showInput && (
             <div className="box">
               <div className="btn-close-top">
