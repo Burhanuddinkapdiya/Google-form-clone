@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useRef} from "react";
 import { Button, Container, Row, Col } from "react-bootstrap";
 import { ImParagraphCenter } from "react-icons/im";
 import { IoIosArrowDropdown } from "react-icons/io";
@@ -18,6 +18,7 @@ import parse from "html-react-parser";
 
 const FormComponent = () => {
   const navigate = useNavigate();
+  const inputFormRef = useRef(null);
   const [formId, setFormId] = useState("");
   const [fields, setFields] = useState([]);
   const [fieldType, setFieldType] = useState("");
@@ -35,6 +36,8 @@ const FormComponent = () => {
   const [numberRange, setNumberRange] = useState("");
   const [parentQuestionId, setParentQuestionId] = useState(null);
   const [parentOptionValue, setParentOptionValue] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+
 
 
   const saveSurvey = async () => {
@@ -85,6 +88,36 @@ const FormComponent = () => {
       navigate("/error", {
         state: { message: "Failed to save the form. Please try again later." },
       });
+    }
+  };
+  const handleDeleteForm = async (formId) => {
+    try {
+      console.log(formId)
+      const response = await fetch(`http://localhost:3001/deleteForm/${formId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        // If the delete request was successful
+        navigate("/success", {
+          state: { message: "Form Deleted Successfully" },
+        });
+        
+      } else {
+        
+        const errorData = await response.json();
+        navigate("/error", {
+        state: { message: errorData.message },
+      });
+      }
+    } catch (error) {
+      console.error('Error deleting form:', error);
+      navigate("/error", {
+        state: { message: "An error occurred while deleting the form. Please try again later." }},
+      )
     }
   };
 
@@ -244,6 +277,7 @@ const FormComponent = () => {
       setNumberRange("");
       setParentQuestionId(null);
       setParentOptionValue("");
+      setIsEditing(false);
     } else if (fieldOptions.length === 0 || fieldOptions.some((option) => option.trim() === "")) {
       setOptionError(true);
       return; // Exit the function early if options are not present or contain empty options
@@ -272,6 +306,8 @@ const FormComponent = () => {
       setEditingFieldId(null);
       setParentOptionValue("");
       setParentQuestionId("");
+      setIsEditing(false);
+
     }
   };
   
@@ -314,6 +350,10 @@ const FormComponent = () => {
   };
   
   const handleEditOptions = (fieldId) => {
+  setIsEditing(true);
+  if (inputFormRef.current) {
+    inputFormRef.current.scrollIntoView({ behavior: "smooth" });
+  }
     setEditingFieldId(fieldId);
     const field = fields.find((field) => field.id === fieldId);
     setFieldLabel(field.label);
@@ -324,8 +364,12 @@ const FormComponent = () => {
     setShowInput(true);
   };
   
+const handleSaveForm = ()=>{
+  navigate("/success", {
+    state: { message: "Form Saved Successfully!!" },
+  });
+}
 
-  console.log(fields);
 
 
   const renderField = (field) => {
@@ -353,11 +397,11 @@ const FormComponent = () => {
                 />
                 <label style={{ width: "5rem" }}> {option} </label>
                 <Button
-                  className="btn-primary"
-                  size="sm"
+                  className="add-btn"
+                  size="xs"
                   onClick={() => handleAddSubQuestion(field.id, option)}
                 >
-                  Add Sub Question
+                 <IoAdd size={isMobile ? 20 : 25} />
                 </Button>
               </div>
             ))}
@@ -474,9 +518,6 @@ const FormComponent = () => {
               onChange={(e) => setFormTitle(e.target.value)}
             />
             <div className="m-2 px-2">
-              <p className="my-1" style={{ color: "gray", fontSize: "24px" }}>
-                Enter Description
-              </p>
               <TextEditor
                 onContentChange={(content) => setFormDescription(content)}
               />
@@ -499,7 +540,7 @@ const FormComponent = () => {
       .map((field) => renderField(field))
   }
           {showInput && (
-            <div className="box">
+            <div className="box" ref={inputFormRef}>
               <div className="btn-close-top">
                 <Button
                   className="btn-close btn-outline-light "
@@ -599,7 +640,7 @@ const FormComponent = () => {
                   disabled={!fieldLabel.trim()}
                   onClick={handleAddField}
                 >
-                  Add
+                 {!isEditing ? "Add" : "Update"}
                 </Button>
               </div>
               {fieldType === "multipleChoice" && (
@@ -712,29 +753,45 @@ const FormComponent = () => {
             </div>
           )}
           <div className="add-btn-container">
-            {formId && <Button
+            
+            {formId ? <Button
+              className="btn btn-danger"
+              variant="btn-danger"
+              onClick={()=>handleDeleteForm(formId)}
+            >
+              Delete Form
+            </Button>:""}
+            {formId ? <Button
               className="add-btn"
               onClick={() => setShowInput(!showInput)}
             >
               <IoAdd size={isMobile ? 20 : 25} />
-            </Button>}
-          </div>
-          <div className="save-btn-container">
-            {/* <Button
+            </Button>:""}
+            {fields.length ? <Button
               className="save-button"
               variant="primary"
-              onClick={sendDataToServer}
+              onClick={handleSaveForm}
             >
               Save Form
-            </Button> */}
-            {/* <Button
+            </Button>:""}
+          </div>
+          {/* <div className="save-btn-container">
+            {formId ? <Button
+              className="btn btn-danger"
+              variant="btn-danger"
+              onClick={handleDeleteForm}
+            >
+              Delete Form
+            </Button>:""}
+            {fields.length ? <Button
               className="save-button"
               variant="primary"
-              onClick={handleAddSubQuestionProceed}
+              onClick={handleSaveForm}
             >
-              Add Sub Questions
-            </Button> */}
-          </div>
+              Save Form
+            </Button>:""}
+            
+          </div> */}
         </Col>
       </Row>
     </Container>

@@ -137,15 +137,15 @@ select {
 }
 .add-btn-container {
   display: flex;
-  justify-content: center;
-  margin: 10px;
+  justify-content: space-evenly;
+  padding: 20px;
 }
-.save-btn-container{
+/* .save-btn-container{
   display: flex;
   justify-content: center;
-  margin: auto;
-  gap:1rem
-}
+  align-items: center;
+  gap:32rem
+} */
 
 
 .options{

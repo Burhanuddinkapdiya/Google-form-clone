@@ -305,6 +305,40 @@ app.delete('/deleteQuestion/:id', async (req, res) => {
   }
 });
 
+// Define a route to handle deleting a form and its associated questions
+app.delete('/deleteForm/:formId', async (req, res) => {
+  let connection;
+  try {
+    const formId = req.params.formId;
+
+    // Start a new transaction
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    // Delete associated questions first
+    await connection.query("DELETE FROM survey_questions WHERE s_id = ?", [formId]);
+
+    // Delete the form itself
+    await connection.query("DELETE FROM survey_form WHERE s_id = ?", [formId]);
+
+    // Commit the transaction
+    await connection.commit();
+    connection.release();
+
+    res.status(200).json({ message: 'Form and associated questions deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting form and questions:', error);
+
+    // Rollback the transaction in case of error
+    if (connection) {
+      await connection.rollback();
+      connection.release();
+    }
+
+    res.status(500).json({ error: 'Failed to delete form and questions' });
+  }
+});
+
 
 
 // Define a route to handle submitting form data (including file uploads)

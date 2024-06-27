@@ -239,7 +239,7 @@ const SubmitForm = () => {
                     required={field.required}
                   />
                   {option}
-                  {renderChildFields(field.id, option)} {/* Recursive call */}
+                   {renderChildFields(field.id, option)} {/* Recursive call */}
                 </div>
               ))}
             </div>
@@ -272,7 +272,7 @@ const SubmitForm = () => {
                     required={field.required}
                   />
                   <label htmlFor={`option_${optionIndex}`}>{option}</label>
-                  {renderChildFields(field.id, option)} {/* Recursive call */}
+                  {/* {renderChildFields(field.id, option)} Recursive call */}
                 </div>
               ))}
             </div>
