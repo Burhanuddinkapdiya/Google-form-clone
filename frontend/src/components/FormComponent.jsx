@@ -90,6 +90,13 @@ const FormComponent = () => {
       });
     }
   };
+  const handleSaveForm = ()=>{
+    navigate("/success", {
+      state: { message: "Survey Created" , url:`http://localhost:3001/survey/${formId}/ITSID` },
+    });
+  }
+  
+  
   const handleDeleteForm = async (formId) => {
     try {
       console.log(formId)
@@ -200,6 +207,9 @@ const FormComponent = () => {
 
 
   const handleAddSubQuestion = (id, option) => {
+    if (inputFormRef.current) {
+      inputFormRef.current.scrollIntoView({ behavior: "smooth" });
+    }
     setParentQuestionId(id);
     setParentOptionValue(option);
     setShowInput(true);
@@ -247,6 +257,7 @@ const FormComponent = () => {
   };
 
   const handleAddField = () => {
+    
     if (fieldType === "paragraph" || fieldType === "date" || fieldType === "file" || fieldType === "number") {
       if (fieldType === "number" && !numberRange) {
         return;
@@ -364,12 +375,6 @@ const FormComponent = () => {
     setShowInput(true);
   };
   
-const handleSaveForm = ()=>{
-  navigate("/success", {
-    state: { message: "Form Saved Successfully!!" },
-  });
-}
-
 
 
   const renderField = (field) => {
@@ -759,7 +764,7 @@ const handleSaveForm = ()=>{
               variant="btn-danger"
               onClick={()=>handleDeleteForm(formId)}
             >
-              Delete Form
+              Delete
             </Button>:""}
             {formId ? <Button
               className="add-btn"
@@ -767,12 +772,12 @@ const handleSaveForm = ()=>{
             >
               <IoAdd size={isMobile ? 20 : 25} />
             </Button>:""}
-            {fields.length ? <Button
+            {formId ? <Button
               className="save-button"
               variant="primary"
               onClick={handleSaveForm}
             >
-              Save Form
+              Save Survey
             </Button>:""}
           </div>
           {/* <div className="save-btn-container">

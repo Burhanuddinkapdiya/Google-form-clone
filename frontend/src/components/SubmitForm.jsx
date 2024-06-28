@@ -111,16 +111,7 @@ const SubmitForm = () => {
 
     setFormData({ ...formData, [fieldId]: value });
 
-    // if (field.type === "multipleChoice") {
-    //   const dependentFields = fields.filter(
-    //     (f) => f.p_q_id === field.id && f.on_value === value
-    //   );
-    //   const updatedVisibleFields = [
-    //     ...visibleFields,
-    //     ...dependentFields.map((f) => f.id),
-    //   ];
-    //   setVisibleFields(updatedVisibleFields);
-    // }
+    
   };
 
   const handleSubmit = async (e) => {
@@ -239,7 +230,8 @@ const SubmitForm = () => {
                     required={field.required}
                   />
                   {option}
-                   {renderChildFields(field.id, option)} {/* Recursive call */}
+                  {formData[field.id] === option &&
+                    renderChildFields(field.id, option)} {/* Recursive call */}
                 </div>
               ))}
             </div>
@@ -321,6 +313,112 @@ const SubmitForm = () => {
         </div>
       ));
   };
+
+  const renderField = (field) => (
+    <div className="box" key={field.id}>
+      <label>{field.label}</label>
+      {field.type === "paragraph" && (
+        <textarea
+          className="custom-input"
+          onChange={(e) => handleInputChange(field.id, e.target.value)}
+          required={field.required}
+        />
+      )}
+  
+      {field.type === "multipleChoice" && (
+        <div>
+          {field.options.map((option, optionIndex) => (
+            <div className="options" key={optionIndex}>
+              <input
+                type="radio"
+                name={`option_${field.id}`}
+                value={option}
+                onChange={(e) => handleInputChange(field.id, e.target.value)}
+                required={field.required}
+              />
+              {option}
+              {formData[field.id] === option &&
+                renderChildFields(field.id, option)} {/* Recursive call */}
+            </div>
+          ))}
+        </div>
+      )}
+      {field.type === "dropdown" && (
+        <select
+          className="custom-select"
+          onChange={(e) => handleInputChange(field.id, e.target.value)}
+          required={field.required}
+        >
+          <option value="">Select {field.label}</option>
+          {field.options.map((option, optionIndex) => (
+            <option key={optionIndex} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      )}
+      {field.type === "checkbox" && (
+        <div>
+          {field.options.map((option, optionIndex) => (
+            <div className="options" key={optionIndex}>
+              <input
+                className="custom-checkbox"
+                type="checkbox"
+                id={`option_${optionIndex}`}
+                name={`option_${field.id}`}
+                value={option}
+                onChange={(e) => handleInputChange(field.id, e.target.value)}
+                required={field.required}
+              />
+              <label htmlFor={`option_${optionIndex}`}>{option}</label>
+            
+            </div>
+          ))}
+        </div>
+      )}
+      {field.type === "date" && (
+        <input
+          className="custom-input"
+          type="date"
+          onChange={(e) => handleInputChange(field.id, e.target.value)}
+          required={field.required}
+        />
+      )}
+      {field.type === "file" && (
+        <input
+          className="custom-input"
+          type="file"
+          accept={
+            field.options[0] === ".jpeg" ? ".jpg, .jpeg" : field.options[0]
+          }
+          name={field.id}
+          onChange={(e) => handleInputChange(field.id, e.target.files[0])}
+          required={field.required}
+        />
+      )}
+      {field.type === "number" && (
+        <input
+          type="number"
+          className="custom-input"
+          min={maxValue}
+          max={maxValue}
+          onChange={(e) => {
+            console.log(maxValue);
+            handleNumberChange(field.id, e);
+          }}
+          required={field.required}
+          onInput={handleNumberInput}
+        />
+      )}
+      {fieldErrors[field.id] && (
+        <span className="field-error-message">
+          {fieldErrors[field.id] === true
+            ? "This field is required."
+            : fieldErrors[field.id]}
+        </span>
+      )}
+    </div>
+  );
   
 
   return (
@@ -350,129 +448,9 @@ const SubmitForm = () => {
                 encType="multipart/form-data"
                 noValidate
               >
-                {fields.map((field) =>
-                  visibleFields.includes(field.id) ? (
-                    <div className="box" key={field.id}>
-                      <label>{field.label}</label>
-                      {field.type === "paragraph" && (
-                        <textarea
-                          className="custom-input"
-                          onChange={(e) =>
-                            handleInputChange(field.id, e.target.value)
-                          }
-                          required={field.required}
-                        />
-                      )}
-
-                      {field.type === "multipleChoice" && (
-                        <div>
-                          {field.options.map((option, optionIndex) => (
-                            <div className="options" key={optionIndex}>
-                              <input
-                                type="radio"
-                                name={`option_${field.id}`}
-                                value={option}
-                                onChange={(e) =>
-                                  handleInputChange(field.id, e.target.value)
-                                }
-                                required={field.required}
-                              />
-                              {option}
-
-                              {/* {renderChildFields(field.id, option)} */}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {field.type === "dropdown" && (
-                        <select
-                          className="custom-select"
-                          onChange={(e) =>
-                            handleInputChange(field.id, e.target.value)
-                          }
-                          required={field.required}
-                        >
-                          <option value="">Select {field.label}</option>
-                          {field.options.map((option, optionIndex) => (
-                            <option key={optionIndex} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                      {field.type === "checkbox" && (
-                        <div>
-                          {field.options.map((option, optionIndex) => (
-                            <div className="options" key={optionIndex}>
-                              <input
-                                className="custom-checkbox"
-                                type="checkbox"
-                                id={`option_${optionIndex}`}
-                                name={`option_${field.id}`}
-                                value={option}
-                                onChange={(e) =>
-                                  handleInputChange(field.id, e.target.value)
-                                }
-                                required={field.required}
-                              />
-                              <label htmlFor={`option_${optionIndex}`}>
-                                {option}
-                              </label>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {field.type === "date" && (
-                        <input
-                          className="custom-input"
-                          type="date"
-                          onChange={(e) =>
-                            handleInputChange(field.id, e.target.value)
-                          }
-                          required={field.required}
-                        />
-                      )}
-                      {field.type === "file" && (
-                        <input
-                          className="custom-input"
-                          type="file"
-                          accept={
-                            field.options[0] === ".jpeg"
-                              ? ".jpg, .jpeg"
-                              : field.options[0]
-                          }
-                          name={field.id}
-                          onChange={(e) =>
-                            handleInputChange(field.id, e.target.files[0])
-                          }
-                          required={field.required}
-                        />
-                      )}
-                      {field.type === "number" && (
-                        <input
-                          type="number"
-                          className="custom-input"
-                          min={maxValue}
-                          max={maxValue}
-                          onChange={(e) => {
-                            console.log(maxValue);
-                            handleNumberChange(field.id, e);
-                          }}
-                          required={field.required}
-                          onInput={handleNumberInput}
-                        />
-                      )}
-                      {fieldErrors[field.id] && (
-                        <span className="field-error-message">
-                          {fieldErrors[field.id] === true
-                            ? "This field is required."
-                            : fieldErrors[field.id]}
-                        </span>
-                      )}
-                      {renderChildFields(field.id, formData[field.id])}
-                    </div>
-                  ) : null
-                )}
+                {fields
+                .filter((field) => visibleFields.includes(field.id))
+                .map((field) => renderField(field))}
                 <div className="submit-button">
                   <Button type="submit" size="sm" variant="primary">
                     Submit

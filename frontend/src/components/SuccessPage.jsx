@@ -8,6 +8,7 @@ const SuccessPage = () => {
   const location = useLocation();
   const { state } = location;
   const message = state?.message || 'An error occurred.';
+  const url = state?.url || 'TankYou for Submission';
 
   return (
     <Container>
@@ -16,7 +17,7 @@ const SuccessPage = () => {
           <div className="success-message">
             <FaCheckCircle className="success-icon" />
             <h1>{message}</h1>
-            <h5>Thank you for your submission.</h5>
+            <h5>{url}</h5>
           </div>
         </Col>
       </Row>
