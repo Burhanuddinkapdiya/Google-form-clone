@@ -92,7 +92,7 @@ const FormComponent = () => {
   };
   const handleSaveForm = ()=>{
     navigate("/success", {
-      state: { message: "Survey Created" , url:`http://localhost:5713/survey/${formId}/ITSID` },
+      state: { message: "Survey Created" , url:`http://localhost:5173/survey/${formId}/ITSID` },
     });
   }
   
@@ -544,8 +544,9 @@ const FormComponent = () => {
       .filter((field) => !field.p_q_id)
       .map((field) => renderField(field))
   }
+  <div ref={inputFormRef}>
           {showInput && (
-            <div className="box" ref={inputFormRef}>
+            <div className="box" >
               <div className="btn-close-top">
                 <Button
                   className="btn-close btn-outline-light "
@@ -756,7 +757,7 @@ const FormComponent = () => {
                 </div>
               )}
             </div>
-          )}
+          )}</div>
           <div className="add-btn-container">
             
             {formId ? <Button

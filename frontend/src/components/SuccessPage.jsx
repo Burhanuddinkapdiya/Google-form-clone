@@ -18,7 +18,7 @@ const SuccessPage = () => {
             <FaCheckCircle className="success-icon" />
             <h1>{message}</h1>
             
-            {url ? <Link to={url}>{url}</Link> : <p>Thank You For Submission</p>}
+            {url ? <Link to={url}>{url}</Link> : <h5>Thank You For Submission</h5>}
           </div>
         </Col>
       </Row>
