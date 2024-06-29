@@ -1,14 +1,14 @@
 import { Container, Row, Col } from "react-bootstrap";
 import { FaCheckCircle } from "react-icons/fa";
 import "./SuccessPage.css";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 const SuccessPage = () => {
 
   const location = useLocation();
   const { state } = location;
   const message = state?.message || 'An error occurred.';
-  const url = state?.url || 'TankYou for Submission';
+  const url = state?.url ;
 
   return (
     <Container>
@@ -17,7 +17,8 @@ const SuccessPage = () => {
           <div className="success-message">
             <FaCheckCircle className="success-icon" />
             <h1>{message}</h1>
-            <h5>{url}</h5>
+            
+            {url ? <Link to={url}>{url}</Link> : <p>Thank You For Submission</p>}
           </div>
         </Col>
       </Row>

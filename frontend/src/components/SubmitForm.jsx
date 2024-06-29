@@ -100,7 +100,7 @@ const SubmitForm = () => {
   const handleInputChange = (fieldId, value) => {
     const field = fields.find((x) => x.id === fieldId);
     if (field && field.type === "file") {
-      const fileSizeLimit = field.options[1]; // Assuming options[1] is the file size limit in MB
+      const fileSizeLimit = field.options[1];
       if (value instanceof File && value.size > fileSizeLimit * 1024 * 1024) {
         setFieldErrors(
           `File size exceeds the maximum allowed size of ${fileSizeLimit} MB.`
@@ -111,7 +111,30 @@ const SubmitForm = () => {
 
     setFormData({ ...formData, [fieldId]: value });
 
-    
+    const updateVisibleFields = (currentFields, parentId, parentValue) => {
+      const childFields = currentFields.filter(
+        (field) => field.p_q_id === parentId && field.on_value === parentValue
+      );
+
+      childFields.forEach((childField) => {
+        if (!visibleFields.includes(childField.id)) {
+          visibleFields.push(childField.id);
+        }
+        updateVisibleFields(currentFields, childField.id, formData[childField.id]);
+      });
+    };
+
+    const newVisibleFields = fields
+      .filter(
+        (field) => !field.p_q_id || formData[field.p_q_id] === field.on_value
+      )
+      .map((field) => field.id);
+
+    newVisibleFields.forEach((fieldId) => {
+      updateVisibleFields(fields, fieldId, formData[fieldId]);
+    });
+
+    setVisibleFields(newVisibleFields);
   };
 
   const handleSubmit = async (e) => {
@@ -119,47 +142,49 @@ const SubmitForm = () => {
   
     // Validate required fields
     const newFieldErrors = {};
-    fields.forEach((field) => {
-      const value = formData[field.id];
+    visibleFields.forEach((fieldId) => {
+      const field = fields.find((x) => x.id === fieldId);
+      const value = formData[fieldId];
       if (
         field.required &&
         (!value || (typeof value === "string" && value.trim() === ""))
       ) {
-        newFieldErrors[field.id] = true;
+        newFieldErrors[fieldId] = true;
       }
-      if (field.type === "number" && value.length !== maxValue.toString().length) {
-        newFieldErrors[field.id] = `Number must be exactly ${maxValue.toString().length}`;
+      if (
+        field.type === "number" &&
+        value.length !== maxValue.toString().length
+      ) {
+        newFieldErrors[fieldId] = `Number must be exactly ${maxValue.toString().length}`;
       }
     });
-  
+
     setFieldErrors(newFieldErrors);
-  
-    // If any required field is empty or only whitespace, prevent form submission
+
     if (Object.values(newFieldErrors).some((error) => error)) {
       return;
     }
-  
+
     const formDataToSend = new FormData();
     formDataToSend.append("surveyId", formId);
     formDataToSend.append("itsId", itsId);
-  
-    // Filter form data to include only selected answers
-    Object.entries(formData).forEach(([key, value]) => {
-      if (value) {
-        formDataToSend.append(key, value);
+
+    visibleFields.forEach((fieldId) => {
+      if (formData[fieldId]) {
+        formDataToSend.append(fieldId, formData[fieldId]);
       }
     });
-  
+
     try {
       const response = await fetch("http://localhost:3001/submitFormData", {
         method: "POST",
         body: formDataToSend,
       });
-  
+
       if (!response.ok) {
         throw new Error("Failed to save survey answer data");
       }
-  
+
       console.log("Survey answer data saved successfully");
       setFormData({});
       navigate("/success", {
@@ -170,7 +195,6 @@ const SubmitForm = () => {
       navigate("/error", { state: { message: "Failed to submit form data." } });
     }
   };
-  
 
   // Calculate max value for number fields
   useEffect(() => {
@@ -314,7 +338,9 @@ const SubmitForm = () => {
       ));
   };
 
-  const renderField = (field) => (
+  const renderField = (field) => {
+    if (field.p_q_id) return null;
+    return (
     <div className="box" key={field.id}>
       <label>{field.label}</label>
       {field.type === "paragraph" && (
@@ -417,8 +443,8 @@ const SubmitForm = () => {
             : fieldErrors[field.id]}
         </span>
       )}
-    </div>
-  );
+    </div>)
+  };
   
 
   return (
