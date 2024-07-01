@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect} from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button, Container, Row, Col } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -16,6 +16,7 @@ const SubmitForm = () => {
   const [maxValue, setMaxValue] = useState(999);
   const [visibleFields, setVisibleFields] = useState([]);
   const navigate = useNavigate();
+  const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
     if (formId && itsId) {
@@ -223,6 +224,13 @@ const SubmitForm = () => {
       e.target.value = e.target.value.slice(0, -1);
     }
   };
+
+  const handleClearForm = ()=>{
+    setFormData({});
+    
+  
+    setFormKey((prevKey) => prevKey + 1);
+  }
 
   const renderChildFields = (parentId, parentValue) => {
     return fields
@@ -473,13 +481,18 @@ const SubmitForm = () => {
                 method="post"
                 encType="multipart/form-data"
                 noValidate
+                key={formKey}
+
               >
                 {fields
                 .filter((field) => visibleFields.includes(field.id))
                 .map((field) => renderField(field))}
                 <div className="submit-button">
-                  <Button type="submit" size="sm" variant="primary">
-                    Submit
+                    <Button className="save-button" type="submit" size="md" variant="primary">
+                      Submit
+                    </Button>
+                  <Button className="clear-button" onClick={handleClearForm} size="md" variant="link">
+                    Clear Form
                   </Button>
                 </div>
               </form>

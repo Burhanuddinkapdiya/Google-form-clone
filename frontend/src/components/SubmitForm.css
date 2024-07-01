@@ -34,9 +34,14 @@
   
   .submit-button{
     display: flex;
-    margin-top: 20px;
+    margin-top: 10px;
     align-items: center;
-    flex-direction: column;
+    flex-direction: row;
+    justify-content: center;
+    gap: 35rem;
+  }
+  .clear-button{
+    color: #663ab5;
   }
   .field-error-message {
     padding: 5px;
