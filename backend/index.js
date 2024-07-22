@@ -480,6 +480,106 @@ app.delete("/deleteSurveyData/:formId/:itsId", async (req, res) => {
   }
 });
 
+// Report page
+
+// Route to fetch survey titles
+app.get('/surveys', async (req, res) => {
+  try {
+    const [surveys] = await pool.query("SELECT s_id AS id, title FROM survey_form");
+    res.status(200).json(surveys);
+  } catch (error) {
+    console.error("Error fetching survey titles:", error);
+    res.status(500).json({ error: "Failed to fetch survey titles" });
+  }
+});
+
+// Route to fetch survey results
+// Route to fetch survey results
+app.get('/surveyResults/:surveyId', async (req, res) => {
+  try {
+    const surveyId = req.params.surveyId;
+
+    // Fetch survey details
+    const [[survey]] = await pool.query("SELECT s_id AS id, title, description FROM survey_form WHERE s_id = ?", [surveyId]);
+
+    if (!survey) {
+      return res.status(404).json({ error: "Survey not found" });
+    }
+
+    // Fetch multichoice questions and their answers
+    const [questions] = await pool.query(`
+      SELECT q.q_id AS id, q.label, a.answer, COUNT(a.answer) AS count, 
+        (SELECT COUNT(*) FROM survey_answers WHERE q_id = q.q_id) AS total_answers
+      FROM survey_questions q
+      LEFT JOIN survey_answers a ON q.q_id = a.q_id
+      WHERE q.s_id = ? AND q.type = 'multipleChoice'
+      GROUP BY q.q_id, a.answer
+    `, [surveyId]);
+
+    // Format the results and calculate percentages
+    const formattedQuestions = questions.reduce((acc, question) => {
+      const { id, label, answer, count, total_answers } = question;
+      if (!acc[id]) {
+        acc[id] = {
+          id,
+          label,
+          type: 'multipleChoice',
+          answers: []
+        };
+      }
+      const percentage = total_answers ? (count / total_answers) * 100 : 0;
+      acc[id].answers.push({ text: answer, percentage });
+      return acc;
+    }, {});
+
+    survey.questions = Object.values(formattedQuestions);
+
+    res.status(200).json(survey);
+  } catch (error) {
+    console.error("Error fetching survey results:", error);
+    res.status(500).json({ error: "Failed to fetch survey results" });
+  }
+});
+// Define a route to fetch survey results including its_id
+app.get('/surveyData/:surveyId', async (req, res) => {
+  const surveyId = req.params.surveyId;
+
+  try {
+    const [questions] = await pool.query(
+      "SELECT q.q_id, q.label, q.type FROM survey_questions q WHERE q.s_id = ?",
+      [surveyId]
+    );
+
+    const [answers] = await pool.query(
+      `SELECT a.q_id, a.answer, a.its_id FROM survey_answers a WHERE a.s_id = ?`,
+      [surveyId]
+    );
+
+    const surveyResults = {
+      questions: questions.map(question => {
+        const questionAnswers = answers.filter(answer => answer.q_id === question.q_id);
+
+        const formattedAnswers = questionAnswers.map(answer => {
+          return { text: answer.answer, its_id: answer.its_id };
+        });
+
+        return {
+          id: question.q_id,
+          label: question.label,
+          type: question.type,
+          answers: formattedAnswers
+        };
+      })
+    };
+
+    res.status(200).json(surveyResults);
+  } catch (error) {
+    console.error('Error fetching survey results:', error);
+    res.status(500).json({ error: 'Failed to fetch survey results' });
+  }
+});
+
+
 // Start the server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

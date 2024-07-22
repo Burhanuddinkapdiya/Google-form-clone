@@ -1,4 +1,4 @@
-import { useEffect, useState,useRef} from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button, Container, Row, Col } from "react-bootstrap";
 import { ImParagraphCenter } from "react-icons/im";
 import { IoIosArrowDropdown } from "react-icons/io";
@@ -38,32 +38,33 @@ const FormComponent = () => {
   const [parentOptionValue, setParentOptionValue] = useState("");
   const [isEditing, setIsEditing] = useState(false);
 
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 600);
+    };
 
+    // Add event listener to window resize
+    window.addEventListener("resize", handleResize);
+
+    // Remove event listener on component unmount
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   const saveSurvey = async () => {
     try {
       const formData = {
         title: formTitle,
         description: formDescription,
-        // fields: fields.map((field) => {
-        //   return {
-        //     id: field.id,
-        //     type: field.type,
-        //     label: field.label,
-        //     options: field.options,
-        //     p_q_id: field.p_q_id !== undefined ? field.p_q_id : null,
-        //     on_value: field.on_value !== undefined ? field.on_value : null,
-        //   };
-        // }),
       };
       console.log(formData);
 
-      if(!formData.title || !formData.description){
+      if (!formData.title || !formData.description) {
         alert("Please Fill The Following Fields!!");
         return;
       }
 
-      
       const response = await fetch("http://localhost:3001/saveSurvey", {
         method: "POST",
         headers: {
@@ -81,8 +82,6 @@ const FormComponent = () => {
       setFormId(responseData.formId);
       setShowInput(true);
       console.log("Form data saved successfully", formId);
-
-
     } catch (error) {
       console.error("Error:", error.message);
       navigate("/error", {
@@ -90,41 +89,47 @@ const FormComponent = () => {
       });
     }
   };
-  const handleSaveForm = ()=>{
+  const handleSaveForm = () => {
     navigate("/success", {
-      state: { message: "Survey Created" , url:`http://localhost:5173/survey/${formId}/ITSID` },
+      state: {
+        message: "Survey Created",
+        url: `http://localhost:5173/survey/${formId}/ITSID`,
+      },
     });
-  }
-  
-  
+  };
+
   const handleDeleteForm = async (formId) => {
     try {
-      console.log(formId)
-      const response = await fetch(`http://localhost:3001/deleteForm/${formId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
+      console.log(formId);
+      const response = await fetch(
+        `http://localhost:3001/deleteForm/${formId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
-      });
+      );
 
       if (response.ok) {
         // If the delete request was successful
         navigate("/success", {
           state: { message: "Form Deleted Successfully" },
         });
-        
       } else {
-        
         const errorData = await response.json();
         navigate("/error", {
-        state: { message: errorData.message },
-      });
+          state: { message: errorData.message },
+        });
       }
     } catch (error) {
-      console.error('Error deleting form:', error);
+      console.error("Error deleting form:", error);
       navigate("/error", {
-        state: { message: "An error occurred while deleting the form. Please try again later." }},
-      )
+        state: {
+          message:
+            "An error occurred while deleting the form. Please try again later.",
+        },
+      });
     }
   };
 
@@ -155,41 +160,53 @@ const FormComponent = () => {
     } catch (error) {
       console.error("Error:", error.message);
       navigate("/error", {
-        state: { message: "Failed to save the question. Please try again later." },
+        state: {
+          message: "Failed to save the question. Please try again later.",
+        },
       });
     }
   };
   const updateQuestion = async (questionId, updatedData) => {
     try {
-      const response = await fetch(`http://localhost:3001/updateQuestion/${questionId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(updatedData),
-      });
+      const response = await fetch(
+        `http://localhost:3001/updateQuestion/${questionId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedData),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to update question");
       }
 
-      const updatedFields = fields.map((field) => (field.id === questionId ? updatedData : field));
+      const updatedFields = fields.map((field) =>
+        field.id === questionId ? updatedData : field
+      );
       setFields(updatedFields);
 
       console.log("Question updated successfully", updatedData);
     } catch (error) {
       console.error("Error:", error.message);
       navigate("/error", {
-        state: { message: "Failed to update the question. Please try again later." },
+        state: {
+          message: "Failed to update the question. Please try again later.",
+        },
       });
     }
   };
 
   const deleteQuestion = async (id) => {
     try {
-      const response = await fetch(`http://localhost:3001/deleteQuestion/${id}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `http://localhost:3001/deleteQuestion/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to delete question");
@@ -200,11 +217,12 @@ const FormComponent = () => {
     } catch (error) {
       console.error("Error:", error.message);
       navigate("/error", {
-        state: { message: "Failed to delete the question. Please try again later." },
+        state: {
+          message: "Failed to delete the question. Please try again later.",
+        },
       });
     }
   };
-
 
   const handleAddSubQuestion = (id, option) => {
     if (inputFormRef.current) {
@@ -237,28 +255,19 @@ const FormComponent = () => {
     });
   };
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 600);
-    };
 
-    // Add event listener to window resize
-    window.addEventListener("resize", handleResize);
-
-    // Remove event listener on component unmount
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
- 
 
   const handleDeleteField = (id) => {
     deleteQuestion(id); // Call the deleteQuestion function to delete the question from the server
   };
 
   const handleAddField = () => {
-    
-    if (fieldType === "paragraph" || fieldType === "date" || fieldType === "file" || fieldType === "number") {
+    if (
+      fieldType === "paragraph" ||
+      fieldType === "date" ||
+      fieldType === "file" ||
+      fieldType === "number"
+    ) {
       if (fieldType === "number" && !numberRange) {
         return;
       }
@@ -267,13 +276,15 @@ const FormComponent = () => {
         id: editingFieldId !== null ? editingFieldId : fieldCounter,
         type: fieldType,
         label: fieldLabel,
-        options: fieldType === "number" ? [numberRange] : [...fieldOptions.filter((option) => option.trim() !== "")],
+        options:
+          fieldType === "number"
+            ? [numberRange]
+            : [...fieldOptions.filter((option) => option.trim() !== "")],
         p_q_id: parentQuestionId || null, // Default to null for parent fields
         on_value: parentOptionValue || null, // Default to null for parent fields
       };
 
       if (editingFieldId !== null) {
-
         updateQuestion(editingFieldId, newField); // Pass editingFieldId to updateQuestion function
       } else {
         saveSingleQuestion(newField); // Call the saveSingleQuestion function to save a new question
@@ -289,7 +300,10 @@ const FormComponent = () => {
       setParentQuestionId(null);
       setParentOptionValue("");
       setIsEditing(false);
-    } else if (fieldOptions.length === 0 || fieldOptions.some((option) => option.trim() === "")) {
+    } else if (
+      fieldOptions.length === 0 ||
+      fieldOptions.some((option) => option.trim() === "")
+    ) {
       setOptionError(true);
       return; // Exit the function early if options are not present or contain empty options
     } else {
@@ -318,10 +332,8 @@ const FormComponent = () => {
       setParentOptionValue("");
       setParentQuestionId("");
       setIsEditing(false);
-
     }
   };
-  
 
   const handleAddOption = () => {
     setFieldOptions([...fieldOptions, ""]);
@@ -337,7 +349,6 @@ const FormComponent = () => {
     setFieldOptions(newOptions);
   };
 
-
   const handleDuplicateField = (id) => {
     const fieldToDuplicate = fields.find((field) => field.id === id);
     const duplicatedField = { ...fieldToDuplicate, id: fieldCounter };
@@ -352,19 +363,19 @@ const FormComponent = () => {
       }
       return field;
     });
-  
+
     const updatedField = updatedFields.find((field) => field.id === id);
     if (updatedField) {
       await updateQuestion(id, updatedField);
     }
     setFields(updatedFields);
   };
-  
+
   const handleEditOptions = (fieldId) => {
-  setIsEditing(true);
-  if (inputFormRef.current) {
-    inputFormRef.current.scrollIntoView({ behavior: "smooth" });
-  }
+    setIsEditing(true);
+    if (inputFormRef.current) {
+      inputFormRef.current.scrollIntoView({ behavior: "smooth" });
+    }
     setEditingFieldId(fieldId);
     const field = fields.find((field) => field.id === fieldId);
     setFieldLabel(field.label);
@@ -374,13 +385,17 @@ const FormComponent = () => {
     setParentQuestionId(field.p_q_id);
     setShowInput(true);
   };
-  
-
 
   const renderField = (field) => {
-    const subQuestions = fields.filter((subField) => subField.p_q_id === field.id);
+    const subQuestions = fields.filter(
+      (subField) => subField.p_q_id === field.id
+    );
     return (
-      <div className={!field.p_q_id ? "box" : "subQuestion"} key={field.id} style={{ order: field.id }}>
+      <div
+        className={!field.p_q_id ? "box" : "subQuestion"}
+        key={field.id}
+        style={{ order: field.id }}
+      >
         <h4>{field.label}</h4>
         {field.type === "paragraph" && (
           <textarea
@@ -406,7 +421,7 @@ const FormComponent = () => {
                   size="xs"
                   onClick={() => handleAddSubQuestion(field.id, option)}
                 >
-                 <IoAdd size={isMobile ? 20 : 25} />
+                  <IoAdd size={isMobile ? 20 : 25} />
                 </Button>
               </div>
             ))}
@@ -498,55 +513,54 @@ const FormComponent = () => {
             />
           </div>
         </div>
-        {subQuestions.map((subField) =><div
-          key={subField.id}
-        >
-          {renderField(subField)}
-        </div>)}
+        {subQuestions.map((subField) => (
+          <div key={subField.id}>{renderField(subField)}</div>
+        ))}
       </div>
     );
   };
-  
-  
-  
-  
+
   return (
     <Container className="form-container">
       <Row>
-        <Col>{!formId ? <>
-          <div className="box-top">
-            <input
-              value={formTitle}
-              className="custom-input custom-input-top"
-              type="text"
-              placeholder="Enter Title"
-              onChange={(e) => setFormTitle(e.target.value)}
-            />
-            <div className="m-2 px-2">
-              <TextEditor
-                onContentChange={(content) => setFormDescription(content)}
-              />
+        <Col>
+          {!formId ? (
+            <>
+              <div className="box-top">
+                <input
+                  value={formTitle}
+                  className="custom-input custom-input-top"
+                  type="text"
+                  placeholder="Enter Title"
+                  onChange={(e) => setFormTitle(e.target.value)}
+                />
+                <div className="m-2 px-2">
+                  <TextEditor
+                    onContentChange={(content) => setFormDescription(content)}
+                  />
+                </div>
+              </div>
+              <Button
+                className="save-button d-flex m-auto my-3"
+                variant="primary"
+                onClick={saveSurvey}
+              >
+                Add Questions
+              </Button>
+            </>
+          ) : (
+            <div className="box-top">
+              <h1>{formTitle}</h1>
+              <div className="description">{parse(formDescription)}</div>
             </div>
-           
-          </div>
-          <Button
-              className="save-button d-flex m-auto my-3"
-              variant="primary"
-              onClick={saveSurvey}
-            >
-              Add Questions
-            </Button></> : <div className="box-top">
-                <h1>{formTitle}</h1>
-                <div className="description">{parse(formDescription)}</div>
-              </div> }
-            
-           {fields
-      .filter((field) => !field.p_q_id)
-      .map((field) => renderField(field))
-  }
-  <div ref={inputFormRef}>
+          )}
+
+          {fields
+            .filter((field) => !field.p_q_id)
+            .map((field) => renderField(field))}
+
           {showInput && (
-            <div className="box" >
+            <div className="box">
               <div className="btn-close-top">
                 <Button
                   className="btn-close btn-outline-light "
@@ -646,7 +660,7 @@ const FormComponent = () => {
                   disabled={!fieldLabel.trim()}
                   onClick={handleAddField}
                 >
-                 {!isEditing ? "Add" : "Update"}
+                  {!isEditing ? "Add" : "Update"}
                 </Button>
               </div>
               {fieldType === "multipleChoice" && (
@@ -757,47 +771,41 @@ const FormComponent = () => {
                 </div>
               )}
             </div>
-          )}</div>
-          <div className="add-btn-container">
-            
-            {formId ? <Button
-              className="btn btn-danger"
-              variant="btn-danger"
-              onClick={()=>handleDeleteForm(formId)}
-            >
-              Delete
-            </Button>:""}
-            {formId ? <Button
-              className="add-btn"
-              onClick={() => setShowInput(!showInput)}
-            >
-              <IoAdd size={isMobile ? 20 : 25} />
-            </Button>:""}
-            {formId ? <Button
-              className="save-button"
-              variant="primary"
-              onClick={handleSaveForm}
-            >
-              Save Survey
-            </Button>:""}
+          )}
+          <div className="add-btn-container" ref={inputFormRef} >
+            {formId ? (
+              <Button
+                className="btn btn-danger"
+                variant="btn-danger"
+                onClick={() => handleDeleteForm(formId)}
+              >
+                Delete
+              </Button>
+            ) : (
+              ""
+            )}
+            {formId ? (
+              <Button
+                className="add-btn"
+                onClick={() => setShowInput(!showInput)}
+              >
+                <IoAdd size={isMobile ? 20 : 25} />
+              </Button>
+            ) : (
+              ""
+            )}
+            {formId ? (
+              <Button
+                className="save-button"
+                variant="primary"
+                onClick={handleSaveForm}
+              >
+                Save Survey
+              </Button>
+            ) : (
+              ""
+            )}
           </div>
-          {/* <div className="save-btn-container">
-            {formId ? <Button
-              className="btn btn-danger"
-              variant="btn-danger"
-              onClick={handleDeleteForm}
-            >
-              Delete Form
-            </Button>:""}
-            {fields.length ? <Button
-              className="save-button"
-              variant="primary"
-              onClick={handleSaveForm}
-            >
-              Save Form
-            </Button>:""}
-            
-          </div> */}
         </Col>
       </Row>
     </Container>

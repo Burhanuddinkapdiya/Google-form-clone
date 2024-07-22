@@ -1,0 +1,54 @@
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  .header {
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  .select-container {
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  .report {
+    margin-top: 20px;
+  }
+  .title {
+    font-size: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .question {
+    margin-bottom: 15px;
+  }
+  
+  .answers {
+    margin-left: 20px;
+  }
+  
+  .answers li {
+    list-style-type: disc;
+  }
+  
+  .answers li::marker {
+    color: #007bff;
+  }
+  
+  h1, h2, h3 {
+    color: #333;
+  }
+  
+  label, select {
+    font-size: 16px;
+  }
+  
+  select {
+    padding: 5px;
+    margin-left: 10px;
+  }
+  
