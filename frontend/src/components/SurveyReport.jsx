@@ -34,7 +34,10 @@ const SurveyReport = () => {
       } catch (error) {
         console.error("Error fetching survey results:", error);
       }
+    } else {
+      setSurveyResults(null); // Clear results if no survey is selected
     }
+
   };
 
   
@@ -73,7 +76,9 @@ const SurveyReport = () => {
           ))}
         </div>
       )}
-      {selectedSurveyId && <ExportToExcel surveyId={selectedSurveyId} />}
+      {selectedSurveyId && surveyResults && surveyResults.title && (
+        <ExportToExcel surveyId={selectedSurveyId} surveyTitle={surveyResults.title} />
+      )}
     </div>
   );
 };

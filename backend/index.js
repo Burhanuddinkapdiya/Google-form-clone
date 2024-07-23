@@ -371,7 +371,7 @@ app.post('/submitFormData', upload.any(), async (req, res) => {
       const answerValue = formData[key];
       promises.push(
         connection.query(
-          'INSERT INTO survey_answers (s_id, q_id, its_id, answer) VALUES (?, ?, ?, ?)', 
+          'INSERT INTO survey_answers (s_id, q_id, itsid, answer) VALUES (?, ?, ?, ?)', 
           [surveyId, key, itsId, answerValue]
         )
       );
@@ -381,7 +381,7 @@ app.post('/submitFormData', upload.any(), async (req, res) => {
     files.forEach(file => {
       promises.push(
         connection.query(
-          'INSERT INTO survey_answers (s_id, q_id, its_id, answer) VALUES (?, ?, ?, ?)', 
+          'INSERT INTO survey_answers (s_id, q_id, itsid, answer) VALUES (?, ?, ?, ?)', 
           [surveyId, file.fieldname, itsId, file.filename]
         )
       );
@@ -453,7 +453,7 @@ app.get("/checkSurveyData/:formId/:itsId", async (req, res) => {
   try {
     const { formId, itsId } = req.params;
     const [answers] = await pool.query(
-      "SELECT * FROM survey_answers WHERE s_id = ? AND its_id = ?",
+      "SELECT * FROM survey_answers WHERE s_id = ? AND itsid = ?",
       [formId, itsId]
     );
 
@@ -472,7 +472,7 @@ app.get("/checkSurveyData/:formId/:itsId", async (req, res) => {
 app.delete("/deleteSurveyData/:formId/:itsId", async (req, res) => {
   try {
     const { formId, itsId } = req.params;
-    await pool.query("DELETE FROM survey_answers WHERE s_id = ? AND its_id = ?", [formId, itsId]);
+    await pool.query("DELETE FROM survey_answers WHERE s_id = ? AND itsid = ?", [formId, itsId]);
     res.status(200).json({ message: "Survey data deleted successfully" });
   } catch (error) {
     console.error("Error deleting survey data:", error);
@@ -540,7 +540,7 @@ app.get('/surveyResults/:surveyId', async (req, res) => {
     res.status(500).json({ error: "Failed to fetch survey results" });
   }
 });
-// Define a route to fetch survey results including its_id
+// Define a route to fetch survey results including itsid
 app.get('/surveyData/:surveyId', async (req, res) => {
   const surveyId = req.params.surveyId;
 
@@ -551,7 +551,7 @@ app.get('/surveyData/:surveyId', async (req, res) => {
     );
 
     const [answers] = await pool.query(
-      `SELECT a.q_id, a.answer, a.its_id FROM survey_answers a WHERE a.s_id = ?`,
+      `SELECT a.q_id, a.answer, a.itsid FROM survey_answers a WHERE a.s_id = ?`,
       [surveyId]
     );
 
@@ -560,7 +560,7 @@ app.get('/surveyData/:surveyId', async (req, res) => {
         const questionAnswers = answers.filter(answer => answer.q_id === question.q_id);
 
         const formattedAnswers = questionAnswers.map(answer => {
-          return { text: answer.answer, its_id: answer.its_id };
+          return { text: answer.answer, itsid: answer.itsid };
         });
 
         return {
