@@ -40,7 +40,7 @@ const SurveyReport = () => {
 
   };
 
-  
+  console.log(surveyResults)
 
   return (
     <div className="container">
